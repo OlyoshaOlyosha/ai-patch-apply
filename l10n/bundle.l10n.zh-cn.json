@@ -54,11 +54,7 @@
   "Open diff": "打开差异对比",
   "{0} pending edits": "{0} 个待应用的编辑",
   "Some edits failed — copy the report for the AI.": "部分编辑失败——请复制供 AI 使用的报告。",
-  "Accept Current Diff": "接受当前差异",
   "Apply from Clipboard": "从剪贴板应用",
-  "Apply Pending": "应用待定更改",
-  "Cancel Pending": "取消待定更改",
   "Copy Prompt": "复制提示词",
-  "Copy Failed Report": "复制失败报告",
-  "Undo Last Patch": "撤销上一个补丁"
+  "Copy Failed Report": "复制失败报告"
 }

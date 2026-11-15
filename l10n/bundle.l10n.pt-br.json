@@ -54,11 +54,7 @@
   "Open diff": "Abrir diff",
   "{0} pending edits": "{0} alterações pendentes",
   "Some edits failed — copy the report for the AI.": "Algumas alterações falharam — copie o relatório para a IA.",
-  "Accept Current Diff": "Aceitar o diff atual",
   "Apply from Clipboard": "Aplicar da área de transferência",
-  "Apply Pending": "Aplicar alterações pendentes",
-  "Cancel Pending": "Cancelar alterações pendentes",
   "Copy Prompt": "Copiar o prompt",
-  "Copy Failed Report": "Copiar o relatório de falhas",
-  "Undo Last Patch": "Desfazer o último patch"
+  "Copy Failed Report": "Copiar o relatório de falhas"
 }

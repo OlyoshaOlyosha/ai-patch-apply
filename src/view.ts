@@ -100,15 +100,13 @@ export class PatchViewProvider implements vscode.TreeDataProvider<Node> {
     }
 
     nodes.push({ kind: 'header', label: t('Actions') });
-    // Built per query so labels follow the current locale.
+    // Built per query so labels follow the current locale. Only the three
+    // actions with no native surface live here: Apply is also on the status
+    // bar, accept is a keybinding, undo/cancel sit in the apply flow itself.
     nodes.push(
       { kind: 'action', label: t('Apply from Clipboard'), icon: 'play', command: 'aiPatchApply.applyFromClipboard' },
-      { kind: 'action', label: t('Accept Current Diff'), icon: 'debug-step-over', command: 'aiPatchApply.acceptCurrentDiff' },
-      { kind: 'action', label: t('Apply Pending'), icon: 'check', command: 'aiPatchApply.applyPending' },
-      { kind: 'action', label: t('Cancel Pending'), icon: 'close', command: 'aiPatchApply.cancelPending' },
       { kind: 'action', label: t('Copy Prompt'), icon: 'copy', command: 'aiPatchApply.copyPrompt' },
       { kind: 'action', label: t('Copy Failed Report'), icon: 'report', command: 'aiPatchApply.copyFailedReport' },
-      { kind: 'action', label: t('Undo Last Patch'), icon: 'discard', command: 'aiPatchApply.undoLastPatch' },
     );
     return nodes;
   }
