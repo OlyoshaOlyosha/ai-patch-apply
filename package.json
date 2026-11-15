@@ -2,7 +2,7 @@
   "name": "ai-patch-apply",
   "displayName": "AI Patch Apply",
   "description": "Apply AI code changes from your chat — paste a reply with BEFORE/AFTER blocks, review each edit in a native diff, accept or reject. Works with ChatGPT, Claude, Gemini and any other chat.",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "keywords": [
     "ai",
     "patch",

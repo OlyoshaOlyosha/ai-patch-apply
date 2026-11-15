@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.1.0 (2026-11-15)
 
 - Undo/redo: `Ctrl+Alt+Z` steps back per patch (up to 10 steps), the new `Ctrl+Alt+Y` steps forward after an accidental undo.
 - Resumable review: pending diff tabs re-open after a VS Code window reload — the AI's work is no longer lost mid-review.
