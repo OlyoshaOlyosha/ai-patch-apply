@@ -4,6 +4,8 @@ import {
   makeSimpleEntry,
   countMatchedVia,
   trimHistory,
+  truncateForJournal,
+  hasProblems,
   aggregate,
   formatHistory,
   formatTs,
@@ -80,6 +82,73 @@ describe('trimHistory', () => {
     expect(trimmed).toHaveLength(3);
     expect(trimmed.map((e) => e.files)).toEqual([2, 3, 4]);
   });
+
+  it('evicts clean entries before problem ones', () => {
+    // 3 clean + 2 problem entries, limit 2 → only the problem ones survive.
+    const problem = (offset: number, file: string): HistoryEntry =>
+      makePrepareEntry(T + offset, {
+        files: 1,
+        alreadyApplied: 0,
+        atomicRejections: [],
+        failures: [{ file, reason: 'r' }],
+        matchedVia: {},
+      });
+    const entries: HistoryEntry[] = [
+      makeSimpleEntry(T, 'apply', 1, 0),
+      makeSimpleEntry(T + 1, 'apply', 1, 0),
+      problem(2, 'a.ts'),
+      makeSimpleEntry(T + 3, 'apply', 1, 0),
+      problem(4, 'b.ts'),
+    ];
+    const trimmed = trimHistory(entries, 2);
+    expect(trimmed).toHaveLength(2);
+    expect(trimmed.every(hasProblems)).toBe(true);
+    expect(trimmed.map((e) => e.failures[0].file)).toEqual(['a.ts', 'b.ts']);
+  });
+
+  it('falls back to oldest-first eviction when everything is a problem', () => {
+    const entries = Array.from({ length: 5 }, (_, i) =>
+      prepareEntry({
+        files: i,
+        alreadyApplied: 0,
+        atomicRejections: [],
+        failures: [{ file: `f${i}`, reason: 'r' }],
+        matchedVia: {},
+      }),
+    );
+    const trimmed = trimHistory(entries, 2);
+    expect(trimmed.map((e) => e.files)).toEqual([3, 4]);
+  });
+});
+
+describe('truncateForJournal', () => {
+  it('keeps short fragments as-is', () => {
+    expect(truncateForJournal('abc')).toBe('abc');
+  });
+
+  it('marks long fragments with the truncated size', () => {
+    const long = 'x'.repeat(900);
+    const out = truncateForJournal(long)!;
+    expect(out.startsWith('x'.repeat(800))).toBe(true);
+    expect(out).toContain('+100 chars truncated');
+  });
+
+  it('maps empty to undefined', () => {
+    expect(truncateForJournal(undefined)).toBeUndefined();
+    expect(truncateForJournal('')).toBeUndefined();
+  });
+});
+
+describe('hasProblems', () => {
+  it('flags failures, atomic rejections and stale skips', () => {
+    expect(hasProblems(prepareEntry())).toBe(true);
+    expect(
+      hasProblems(makePrepareEntry(T, { files: 1, alreadyApplied: 0, atomicRejections: [], failures: [], matchedVia: {} })),
+    ).toBe(false);
+    expect(hasProblems(makeSimpleEntry(T, 'apply', 1, 1))).toBe(true);
+    expect(hasProblems(makeSimpleEntry(T, 'apply', 1, 0))).toBe(false);
+    expect(hasProblems(makeSimpleEntry(T, 'undo', 1, 0))).toBe(false);
+  });
 });
 
 describe('aggregate', () => {
@@ -139,5 +208,31 @@ describe('formatHistory', () => {
     expect(md).toContain('rejected entirely: a.ts');
     expect(md).toContain('matched: exact ×3, fuzzy ×1');
     expect(md).toContain('apply: 2 file(s) applied, 0 skipped');
+  });
+
+  it('renders failure fragments and hints', () => {
+    const e = makePrepareEntry(T, {
+      files: 1,
+      alreadyApplied: 0,
+      atomicRejections: [],
+      failures: [
+        {
+          file: 'a.ts',
+          reason: 'BEFORE not found in file',
+          before: 'const x = 1;',
+          after: 'const x = 2;',
+          similar: 'const x =  1;',
+          hint: 'closest block at line 5 (indent differs by 2)',
+        },
+      ],
+      matchedVia: {},
+    });
+    const md = formatHistory([e]);
+    expect(md).toContain('_closest block at line 5 (indent differs by 2)_');
+    expect(md).toContain('**BEFORE that did not match**');
+    expect(md).toContain('````');
+    expect(md).toContain('const x = 1;');
+    expect(md).toContain('**Closest block in the file**');
+    expect(md).toContain('**Wanted AFTER**');
   });
 });

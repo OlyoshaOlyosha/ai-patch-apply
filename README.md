@@ -59,7 +59,7 @@ The `Function:` part is optional. Two operational markers are supported:
 | AI Patch: Copy Prompt | — |
 | AI Patch: Show Patch History | — |
 
-Every apply attempt is journaled locally (counts, file names and failure reasons — never file contents). Open `AI Patch: Show Patch History` to see totals, the most frequent failure reasons and how often the AI's code blocks had to be matched fuzzily — useful for telling "the AI got the format wrong" from "the extension mis-matched".
+Every apply attempt is journaled locally. Failed edits are kept with truncated `BEFORE`/`AFTER` fragments and the closest matching block from the file — enough to see *why* the AI's edit failed; whole file contents are never stored. By default only problem entries are kept (`aiPatch.patchHistory: failuresOnly`); set it to `all` for success statistics (the exact-vs-fuzzy match ratio) or `off` to disable the journal entirely. Open `AI Patch: Show Patch History` to see totals, the most frequent failure reasons and how often the AI's code blocks had to be matched fuzzily — useful for telling "the AI got the format wrong" from "the extension mis-matched".
 
 ## Settings
 
@@ -70,6 +70,7 @@ Every apply attempt is journaled locally (counts, file names and failure reasons
 | `aiPatch.pinDiffTabs` | `true` | Pin diff tabs so they do not replace each other. |
 | `aiPatch.focusFirstDiff` | `true` | Focus the first diff tab after preview. |
 | `aiPatch.failureThreshold` | `0.4` | Share of failed changes in a file that rejects the whole file (needs ≥2 failures). |
+| `aiPatch.patchHistory` | `failuresOnly` | What the patch history journal stores: `failuresOnly`, `all`, or `off`. |
 
 ## Languages
 
@@ -88,6 +89,6 @@ code --install-extension ai-patch-apply-<version>.vsix
 
 Open the folder in VS Code and press `F5`. A second window ("Extension Development Host") opens — test the command there.
 
-Run the unit tests with `npm test`. After changing UI strings, run `npm run check-l10n` to make sure every locale bundle is in sync. To run the live smoke test (real VS Code, 21 checks): `node scripts/verify-live.js` — the same test runs in CI on every push.
+Run the unit tests with `npm test`. After changing UI strings, run `npm run check-l10n` to make sure every locale bundle is in sync. To run the live smoke test (real VS Code, 25 checks): `node scripts/verify-live.js` — the same test runs in CI on every push.
 
 Bug reports and contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for the setup and the few rules the codebase lives by. Found a problem? [Open an issue](https://github.com/OlyoshaOlyosha/ai-patch-apply/issues) (there is a template; a clipboard sample makes it fixable in minutes).

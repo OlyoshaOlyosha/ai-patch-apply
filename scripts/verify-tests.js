@@ -30,11 +30,27 @@ async function main() {
   const checks = [];
   const ok = (name, cond) => checks.push([name, !!cond]);
 
+  // VS Code saves documents asynchronously — poll the file instead of a
+  // single read so the checks do not race the write.
+  const waitForFile = async (path, predicate, timeoutMs = 5000) => {
+    const t0 = Date.now();
+    for (;;) {
+      if (predicate(fs.readFileSync(path, 'utf8'))) return true;
+      if (Date.now() - t0 > timeoutMs) return false;
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+  };
+
   let ext = vscode.extensions.getExtension('undefined_publisher.ai-patch-apply');
   if (!ext) ext = vscode.extensions.all.find((e) => /ai-patch-apply/.test(e.id));
   ok('extension found', !!ext);
   if (ext && !ext.isActive) await ext.activate();
   ok('extension activated', !!(ext && ext.isActive));
+
+  // History checks need clean runs recorded too — switch to `all` for the
+  // main flow, then verify the default `failuresOnly` filtering below.
+  const cfg = vscode.workspace.getConfiguration('aiPatch');
+  await cfg.update('patchHistory', 'all', vscode.ConfigurationTarget.Global);
 
   const cmds = await vscode.commands.getCommands(true);
   for (const id of [
@@ -64,13 +80,17 @@ async function main() {
   await vscode.env.clipboard.writeText(SAMPLE);
   await vscode.commands.executeCommand('aiPatchApply.applyFromClipboard');
   await vscode.commands.executeCommand('aiPatchApply.applyPending');
-  const after = fs.readFileSync(file, 'utf8');
-  ok('apply flow modified the file on disk', after.includes('Hi, ${name}!'));
+  ok(
+    'apply flow modified the file on disk',
+    await waitForFile(file, (t) => t.includes('Hi, ${name}!')),
+  );
 
   // Undo restores the original byte-for-byte
   await vscode.commands.executeCommand('aiPatchApply.undoLastPatch');
-  const undone = fs.readFileSync(file, 'utf8');
-  ok('undo restored the original content', undone === ORIGINAL);
+  ok(
+    'undo restored the original content',
+    await waitForFile(file, (t) => t === ORIGINAL),
+  );
 
   // Failure path: BEFORE that does not exist -> report, not a silent no-op
   const BAD = SAMPLE.replace("console.log('Hello, ' + name);", "console.log('GOODBYE ' + name);");
@@ -82,15 +102,18 @@ async function main() {
     'failed BEFORE -> report on clipboard (reason + current content)',
     clip.includes('please regenerate') && clip.includes('hello.js') && clip.includes('GOODBYE'),
   );
-  ok('file untouched on failure', fs.readFileSync(file, 'utf8') === ORIGINAL);
+  ok('file untouched on failure', await waitForFile(file, (t) => t === ORIGINAL));
 
   // Patch history: the flow above must have produced prepare, apply and
   // undo entries; Show History opens them as an untitled Markdown document.
-  await vscode.commands.executeCommand('aiPatchApply.showHistory');
-  await new Promise((resolve) => setTimeout(resolve, 500));
-  const hist = vscode.window.activeTextEditor
-    ? vscode.window.activeTextEditor.document.getText()
-    : '';
+  const showHistoryText = async (waitMs = 500) => {
+    await vscode.commands.executeCommand('aiPatchApply.showHistory');
+    await new Promise((resolve) => setTimeout(resolve, waitMs));
+    return vscode.window.activeTextEditor
+      ? vscode.window.activeTextEditor.document.getText()
+      : '';
+  };
+  const hist = await showHistoryText();
   ok('Show History opened a document', hist.includes('AI Patch Apply — history'));
   ok(
     'history recorded prepare / apply / undo',
@@ -98,6 +121,35 @@ async function main() {
   );
   ok('history shows the failure reason', hist.includes('BEFORE not found in file'));
   ok('history records the match strategy', hist.includes('matched: exact ×'));
+  ok('history stores the failed BEFORE fragment', hist.includes("console.log('GOODBYE ' + name);"));
+
+  // failuresOnly mode (the default): clean runs are not recorded, failures are.
+  const countEntries = (md) => {
+    const m = md.match(/(\d+) entries/);
+    return m ? parseInt(m[1], 10) : -1;
+  };
+  const nAll = countEntries(hist);
+  ok('journal entry count parsed', nAll >= 3);
+
+  await cfg.update('patchHistory', 'failuresOnly', vscode.ConfigurationTarget.Global);
+  await vscode.env.clipboard.writeText(SAMPLE);
+  await vscode.commands.executeCommand('aiPatchApply.applyFromClipboard');
+  await vscode.commands.executeCommand('aiPatchApply.applyPending');
+  // Restore the original content so the BAD sample below fails again —
+  // against the AFTER version it would count as "already applied".
+  await vscode.commands.executeCommand('aiPatchApply.undoLastPatch');
+  const hist2 = await showHistoryText();
+  ok(
+    'failuresOnly: clean run and undo not recorded',
+    countEntries(hist2) === nAll,
+  );
+  await vscode.env.clipboard.writeText(BAD);
+  await vscode.commands.executeCommand('aiPatchApply.applyFromClipboard');
+  const hist3 = await showHistoryText();
+  ok(
+    'failuresOnly: failure recorded with fragments',
+    countEntries(hist3) === nAll + 1 && hist3.includes("console.log('GOODBYE ' + name);"),
+  );
 
   let failed = 0;
   for (const [name, pass] of checks) {

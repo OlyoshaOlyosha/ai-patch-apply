@@ -127,6 +127,17 @@
           "minimum": 0,
           "maximum": 1,
           "description": "%config.failureThreshold%"
+        },
+        "aiPatch.patchHistory": {
+          "type": "string",
+          "enum": ["failuresOnly", "all", "off"],
+          "enumDescriptions": [
+            "%config.patchHistory.failuresOnly%",
+            "%config.patchHistory.all%",
+            "%config.patchHistory.off%"
+          ],
+          "default": "failuresOnly",
+          "description": "%config.patchHistory%"
         }
       }
     }

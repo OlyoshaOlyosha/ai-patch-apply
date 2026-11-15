@@ -2,10 +2,13 @@
 // Markdown formatting. No `vscode` import — same rule as parser.ts and
 // match.ts, so the logic stays unit-testable.
 //
-// The journal answers "who errored — the AI or the extension": each apply
-// attempt is recorded with the canonical failure reasons and with which
-// match-strategy step landed the AI's BEFORE blocks. Content itself is
-// never stored — only counts, file names and reasons.
+// The journal answers "who errored — the AI or the extension": apply
+// attempts are recorded with the canonical failure reasons and with which
+// match-strategy step landed the AI's BEFORE blocks. By default only
+// problem entries are kept (`aiPatch.patchHistory: failuresOnly`). Failed
+// edits carry truncated BEFORE/AFTER fragments and the closest matching
+// block from the file — enough to see why the match failed; whole file
+// contents are never stored.
 
 export type MatchStrategy =
   | 'exact'
@@ -21,6 +24,14 @@ export interface FailureRecord {
   file: string;
   /** Canonical English reason, as it appears in the logs and AI report. */
   reason: string;
+  /** Truncated BEFORE fragment — shows what exactly did not match. */
+  before?: string;
+  /** Truncated AFTER fragment — shows what the AI wanted to achieve. */
+  after?: string;
+  /** Closest matching block found in the file, truncated. */
+  similar?: string;
+  /** One-line pointer: closest block line, indent diff, first divergence. */
+  hint?: string;
 }
 
 export interface HistoryEntry {
@@ -41,7 +52,57 @@ export interface HistoryEntry {
 }
 
 /** Journal capacity — older entries are evicted, newest kept. */
-export const HISTORY_LIMIT = 200;
+export const HISTORY_LIMIT = 100;
+
+/**
+ * Failure fragments are stored truncated: enough to see why the match
+ * failed, small enough that even a huge patch cannot bloat the journal.
+ */
+export const JOURNAL_FRAGMENT_MAX = 800;
+
+export function truncateForJournal(
+  s: string | undefined,
+  max: number = JOURNAL_FRAGMENT_MAX,
+): string | undefined {
+  if (!s) return undefined;
+  if (s.length <= max) return s;
+  return s.slice(0, max) + `\n… (+${s.length - max} chars truncated)`;
+}
+
+/** True for entries worth keeping when the journal is trimmed. */
+export function hasProblems(e: HistoryEntry): boolean {
+  if (e.kind === 'prepare') {
+    return e.failures.length > 0 || e.atomicRejections.length > 0;
+  }
+  // apply / undo: files skipped as stale are the only notable outcome.
+  return e.skipped > 0;
+}
+
+/**
+ * Keeps the newest `limit` entries. Problem entries (failures, atomic
+ * rejections, stale skips) survive eviction: problem-free ones are dropped
+ * oldest-first until under the limit, and only then the oldest problem
+ * entries go.
+ */
+export function trimHistory(
+  entries: HistoryEntry[],
+  limit: number = HISTORY_LIMIT,
+): HistoryEntry[] {
+  if (entries.length <= limit) return entries;
+  const out = entries.slice();
+  let excess = out.length - limit;
+  for (let i = 0; i < out.length && excess > 0; ) {
+    if (!hasProblems(out[i])) {
+      out.splice(i, 1);
+      excess--;
+    } else {
+      i++;
+    }
+  }
+  // Only problem entries remain — fall back to plain oldest-first eviction.
+  if (excess > 0) return out.slice(excess);
+  return out;
+}
 
 function pad2(n: number): string {
   return String(n).padStart(2, '0');
@@ -106,15 +167,6 @@ export function makeSimpleEntry(
     failures: [],
     matchedVia: {},
   };
-}
-
-/** Keeps the newest `limit` entries; the input may already be sorted. */
-export function trimHistory(
-  entries: HistoryEntry[],
-  limit: number = HISTORY_LIMIT,
-): HistoryEntry[] {
-  if (entries.length <= limit) return entries;
-  return entries.slice(entries.length - limit);
 }
 
 export interface HistoryAggregate {
@@ -192,6 +244,23 @@ export function aggregate(entries: HistoryEntry[]): HistoryAggregate {
   return agg;
 }
 
+// Four-backtick fences: failure fragments are AI-generated code blocks and
+// may themselves contain triple backticks (markdown examples, etc.).
+function pushCodeBlock(
+  parts: string[],
+  indent: string,
+  label: string,
+  text: string,
+): void {
+  parts.push(`${indent}**${label}**`);
+  parts.push(`${indent}\`\`\`\``);
+  for (const line of text.split('\n')) {
+    parts.push(`${indent}${line}`);
+  }
+  parts.push(`${indent}\`\`\`\``);
+  parts.push('');
+}
+
 /**
  * Renders the journal as a Markdown document (opened by `Show History`).
  * English on purpose: this is diagnostic data, same audience as the logs
@@ -262,6 +331,18 @@ export function formatHistory(entries: HistoryEntry[]): string {
     }
     for (const f of e.failures) {
       parts.push(`  - ${f.file} — ${f.reason}`);
+      if (f.hint) {
+        parts.push(`    _${f.hint}_`);
+      }
+      if (f.before) {
+        pushCodeBlock(parts, '    ', 'BEFORE that did not match', f.before);
+      }
+      if (f.similar) {
+        pushCodeBlock(parts, '    ', 'Closest block in the file', f.similar);
+      }
+      if (f.after) {
+        pushCodeBlock(parts, '    ', 'Wanted AFTER', f.after);
+      }
     }
     const strat = Object.entries(e.matchedVia)
       .filter(([, n]) => (n ?? 0) > 0)

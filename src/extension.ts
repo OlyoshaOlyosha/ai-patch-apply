@@ -16,9 +16,12 @@ import { PROMPT_TEMPLATE } from './prompt';
 import {
   HISTORY_LIMIT,
   HistoryEntry,
+  hasProblems,
   makePrepareEntry,
   makeSimpleEntry,
+  trimHistory,
   formatHistory,
+  truncateForJournal,
 } from './history';
 
 const t = vscode.l10n.t;
@@ -104,12 +107,21 @@ function hashText(s: string): string {
   return h.toString(36) + ':' + s.length;
 }
 
-// Patch-history journal: append one entry per apply attempt, evicting the
-// oldest past the limit. Contents are never stored — only counts, file
-// names and canonical failure reasons. The journal lives in a module-level
+// Patch-history journal. Mode comes from `aiPatch.patchHistory`:
+// `failuresOnly` (default) keeps just the failed attempts and stale skips,
+// `all` also records clean runs (needed for the exact-vs-fuzzy ratio),
+// `off` disables the journal entirely. The journal lives in a module-level
 // buffer: globalState.update only queues a persistence write, so a
 // read-back right after update can still return the old value — the buffer
 // is the source of truth for the running session.
+type HistoryMode = 'all' | 'failuresOnly' | 'off';
+
+function historyMode(): HistoryMode {
+  return vscode.workspace
+    .getConfiguration('aiPatch')
+    .get<HistoryMode>('patchHistory', 'failuresOnly');
+}
+
 let historyCache: HistoryEntry[] | undefined;
 
 function loadHistory(context: vscode.ExtensionContext): HistoryEntry[] {
@@ -123,12 +135,32 @@ async function recordHistory(
   context: vscode.ExtensionContext,
   entry: HistoryEntry,
 ): Promise<void> {
+  const mode = historyMode();
+  if (mode === 'off') return;
+  if (mode === 'failuresOnly' && !hasProblems(entry)) return;
   const history = loadHistory(context);
   history.push(entry);
   if (history.length > HISTORY_LIMIT) {
-    history.splice(0, history.length - HISTORY_LIMIT);
+    const trimmed = trimHistory(history);
+    history.length = 0;
+    history.push(...trimmed);
   }
   await context.globalState.update(HISTORY_KEY, history.slice());
+}
+
+// One-line pointer to the closest matching block — the full diagnostics
+// live in the AI report; the journal only needs enough context to see why
+// the match failed at a glance.
+function failureHint(f: Failed): string | undefined {
+  if (!f.similarBlock) return undefined;
+  let hint = `closest block at line ${f.similarBlock.lineNumber}`;
+  if (f.similarBlock.indentDiff !== 0) {
+    hint += ` (indent differs by ${f.similarBlock.indentDiff})`;
+  }
+  if (f.charDiff) {
+    hint += `; first divergence at line ${f.charDiff.lineNumber}, column ${f.charDiff.colNumber}`;
+  }
+  return hint;
 }
 
 // lastFailed survives a window reload: the failure report button and the
@@ -535,7 +567,14 @@ export function activate(context: vscode.ExtensionContext): void {
             files: result.prepared.length,
             alreadyApplied: result.alreadyApplied,
             atomicRejections: result.atomicRejections.map((a) => a.file),
-            failures: result.failed.map((f) => ({ file: f.file, reason: f.reason })),
+            failures: result.failed.map((f) => ({
+              file: f.file,
+              reason: f.reason,
+              before: truncateForJournal(f.before),
+              after: truncateForJournal(f.after),
+              similar: truncateForJournal(f.similarBlock?.snippet),
+              hint: failureHint(f),
+            })),
             matchedVia: result.matchedVia,
           }),
         );
@@ -888,13 +927,18 @@ export function activate(context: vscode.ExtensionContext): void {
   const showHistoryCmd = vscode.commands.registerCommand(
     'aiPatchApply.showHistory',
     async () => {
-      const history = loadHistory(context);
+      const text =
+        historyMode() === 'off'
+          ? '# AI Patch Apply — history\n\n' +
+            'Patch history is disabled (`aiPatch.patchHistory: "off"`). ' +
+            'Set it to `failuresOnly` or `all` to start recording.\n'
+          : formatHistory(loadHistory(context));
       const doc = await vscode.workspace.openTextDocument({
-        content: formatHistory(history),
+        content: text,
         language: 'markdown',
       });
       await vscode.window.showTextDocument(doc);
-      log(`history shown (${history.length} entries)`);
+      log('history shown');
     },
   );
 
