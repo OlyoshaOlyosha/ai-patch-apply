@@ -1,0 +1,68 @@
+name: Bug report
+description: Something did not apply, crashed, or behaved unexpectedly.
+labels: ['bug']
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you expect instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Copy an AI reply containing BEFORE/AFTER blocks
+        2. Press Ctrl+Alt+V
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: sample
+    attributes:
+      label: Clipboard sample
+      description: |
+        The BEFORE/AFTER block (or a trimmed version of it) that caused the problem.
+        This is usually the single most useful piece of information.
+      placeholder: |
+        **Location:** File: `src/example.ts`
+
+        **BEFORE:**
+        ```ts
+        ...
+        ```
+    validations:
+      required: false
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - Windows
+        - macOS
+        - Linux
+    validations:
+      required: true
+  - type: input
+    id: vscode-version
+    attributes:
+      label: VS Code version
+      description: From Help → About (e.g. `1.96.0`).
+    validations:
+      required: true
+  - type: input
+    id: extension-version
+    attributes:
+      label: AI Patch Apply version
+      description: From the Extensions view.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Output channel logs
+      description: View → Output → "AI Patch". Copy the lines around the failure.
+    validations:
+      required: false

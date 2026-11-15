@@ -18,3 +18,8 @@ user_commands.md
 .serena/**
 local/**
 *.vsix
+
+# Repo-only: contribution and CI infrastructure
+.github/**
+scripts/**
+CONTRIBUTING.md
