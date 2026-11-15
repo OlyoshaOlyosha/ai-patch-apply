@@ -82,7 +82,7 @@
         {
           "id": "aiPatch",
           "title": "%views.container%",
-          "icon": "$(diff)"
+          "icon": "icons/activity-bar.svg"
         }
       ]
     },

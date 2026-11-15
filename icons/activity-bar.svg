@@ -1,0 +1,10 @@
+<!-- Activity Bar icon: outline version of the extension logo (diagonal
+     diff split, minus top-left, plus bottom-right). Monochrome via
+     currentColor so it follows the VS Code theme. -->
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="2.5" y="2.5" width="19" height="19" rx="4" stroke="currentColor" stroke-width="1.5"/>
+  <path d="M21.5 2.5L2.5 21.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M5.5 8H10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M13.5 16H18.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M16 13.5V18.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+</svg>
