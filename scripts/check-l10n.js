@@ -7,7 +7,11 @@ const fs = require('fs');
 const path = require('path');
 
 const root = path.resolve(__dirname, '..');
-const files = ['extension.js', 'applier.js', 'parser.js', 'decorations.js', 'view.js'];
+// Scan every compiled module — new src/*.js files must not silently escape
+// the gate when the codebase is split further.
+const files = fs
+  .readdirSync(path.join(root, 'out'))
+  .filter((f) => f.endsWith('.js'));
 
 let code = '';
 for (const f of files) {
