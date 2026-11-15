@@ -7,28 +7,47 @@ import { resolveFile, langFromUri, Failed } from './applier';
 const BIG_FILE_LINES = 5000;
 
 // Pointed hint for specific parse/setup reasons. Not a dump of the whole
-// prompt — just the one rule the AI tripped over this time.
+// prompt — just the one rule the AI tripped over this time, with a short
+// example where an example beats prose. Long chats degrade and the model
+// forgets the format; the hint re-teaches exactly the rule that broke.
 // Reasons are canonical English strings coming from parser.ts / applier.ts.
-function hintForReason(reason: string): string | null {
+function hintForReason(f: Failed): string | null {
+  const reason = f.reason;
   if (reason.startsWith('unsupported marker')) {
-    return '⚠ Only `(new file)` and `(delete file)` are recognised. For existing files emit a BEFORE/AFTER pair — split large changes into smaller blocks if needed.';
+    return '⚠ Only `(new file)` and `(delete file)` are recognised as Function markers. For an existing file write a real function name (or omit the Function field) and emit a BEFORE/AFTER pair — split large changes into smaller blocks if needed.';
   }
-  if (reason === 'missing BEFORE block') {
-    return '⚠ BEFORE block is missing. Add it, or use `(new file)` if this is a brand-new file.';
+  switch (reason) {
+    case 'missing BEFORE block':
+      return '⚠ BEFORE block is missing. Add it, or use `(new file)` with no BEFORE if this is a brand-new file.';
+    case 'missing AFTER block':
+      return '⚠ AFTER block is missing. Omit both blocks only for `(delete file)`; every other change needs AFTER.';
+    case 'empty BEFORE block':
+    case 'empty BEFORE fragment':
+      return '⚠ BEFORE contained only filler comments (like `# ... existing code ...`). Replace them with the real code — the extension matches BEFORE against the file character-for-character.';
+    case 'BEFORE contains markdown directives':
+      return '⚠ BEFORE contains markdown directives (e.g. `**Note:**`). Output only the code inside the fence.';
+    case 'new file has no code block':
+      return '⚠ `(new file)` must be followed by an AFTER block containing the complete file content. Omit the BEFORE block, keep the AFTER.';
+    case 'BEFORE not found in file':
+      // When a similar block exists, the diagnostics below (indent diff,
+      // first divergence, snippet) are strictly more useful than a generic
+      // rule repeat — fire this only when there is nothing to diff against.
+      if (f.similarBlock) return null;
+      return '⚠ BEFORE must be a verbatim fragment of the current file content (shown below) — character-for-character, same indentation. Never re-type it from memory, never use ellipses or placeholders; if the change is large, split it into several smaller BEFORE/AFTER pairs.';
+    case 'file not found in workspace':
+      return '⚠ This path does not exist in the workspace. Every `File:` path must start from the workspace root and share the same top-level folder prefix as the other files in this message: if the project folder is `my-app`, write `my-app/README.md`, never bare `README.md`. If unsure where the file lives — ask the user for the exact path.';
+    case 'new file path escapes project root':
+      return '⚠ The path must stay inside the workspace root (no `..` segments). Use a path relative to the workspace root, with the same project-folder prefix as the other files in this message.';
+    case 'marked as new file, but it already exists — refusing to overwrite':
+      return '⚠ This file already exists (you may have created it in an earlier step). Emit a regular BEFORE/AFTER change against the current content below instead of `(new file)`.';
+    case 'delete requested, but file does not exist':
+      return '⚠ Nothing to delete: the file does not exist. It may have been deleted in an earlier step, or the path is wrong — check the project-folder prefix.';
+    case 'cannot open file':
+    case 'cannot open file for delete':
+      return '⚠ The file exists but could not be opened (locked or permission issue). Ask the user to save/close it, then regenerate the same change.';
+    default:
+      return null;
   }
-  if (reason === 'missing AFTER block') {
-    return '⚠ AFTER block is missing.';
-  }
-  if (reason === 'empty BEFORE after cleanup') {
-    return '⚠ BEFORE contained only filler comments (like `# ... existing code ...`). Replace with the real code.';
-  }
-  if (reason === 'empty BEFORE block') {
-    return '⚠ BEFORE block is empty.';
-  }
-  if (reason === 'BEFORE contains markdown directives') {
-    return '⚠ BEFORE contains markdown directives (e.g. `**Note:**`). Output only code inside the fence.';
-  }
-  return null;
 }
 
 function truncateBefore(
@@ -113,7 +132,7 @@ export async function buildFailedReport(
       }
 
       // Pointed hint for the specific rule that got broken.
-      const hint = hintForReason(c.reason);
+      const hint = hintForReason(c);
       if (hint) {
         parts.push(hint);
         parts.push('');
