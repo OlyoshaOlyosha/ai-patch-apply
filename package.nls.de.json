@@ -16,6 +16,7 @@
   "command.cancelPending": "Ausstehende verwerfen",
   "command.copyFailedReport": "Fehlerbericht kopieren",
   "command.undoLastPatch": "Letzten Patch zurücknehmen",
+  "command.redo": "Letzten Patch wiederherstellen",
   "command.clearFailedReport": "Fehlerliste leeren",
   "command.acceptDiff": "Aktuellen Diff übernehmen und zum nächsten wechseln",
   "command.copyPrompt": "Prompt kopieren",

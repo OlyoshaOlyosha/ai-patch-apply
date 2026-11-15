@@ -24,8 +24,11 @@
   "AI Patch: no failures to report": "AI Patch：没有可报告的失败",
   "AI Patch: failure list cleared": "AI Patch：失败列表已清除",
   "AI Patch: nothing to undo": "AI Patch：没有可撤销的内容",
-  "AI Patch: undone {0}, skipped {1} (changed manually).": "AI Patch：已撤销 {0}，跳过 {1}（已手动修改）。",
-  "AI Patch: undone {0} file(s).": "AI Patch：已撤销 {0} 个文件。",
+  "AI Patch: nothing to redo": "AI Patch：没有可重做的内容",
+  "AI Patch: undone {0} file(s). Redo: Ctrl+Alt+Y.": "AI Patch：已撤销 {0} 个文件。重做：Ctrl+Alt+Y。",
+  "AI Patch: undone {0}, skipped {1} (changed manually). Redo: Ctrl+Alt+Y.": "AI Patch：已撤销 {0} 个，跳过 {1} 个（已手动更改）。重做：Ctrl+Alt+Y。",
+  "AI Patch: redone {0} file(s).": "AI Patch：已重做 {0} 个文件。",
+  "AI Patch: redone {0}, skipped {1} (changed manually).": "AI Patch：已重做 {0} 个，跳过 {1} 个（已手动更改）。",
   "AI Patch: {0} pending — diff tabs are open.": "AI Patch：{0} 个待处理 — diff 标签页已打开。",
   "AI Patch: all changes are already in the files ({0}). Nothing applied.": "AI Patch：所有更改已在文件中（{0}）。未应用任何内容。",
   ", already applied: {0}": "，已应用：{0}",
@@ -56,5 +59,6 @@
   "Some edits failed — copy the report for the AI.": "部分编辑失败——请复制供 AI 使用的报告。",
   "Apply from Clipboard": "从剪贴板应用",
   "Copy Prompt": "复制提示词",
-  "Copy Failed Report": "复制失败报告"
+  "Copy Failed Report": "复制失败报告",
+  "AI Patch: review restored — {0} pending file(s).": "AI Patch：评审已恢复 — {0} 个待处理文件。"
 }

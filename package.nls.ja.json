@@ -16,6 +16,7 @@
   "command.cancelPending": "保留中の変更をキャンセル",
   "command.copyFailedReport": "失敗レポートをコピー",
   "command.undoLastPatch": "最後のパッチを元に戻す",
+  "command.redo": "最後のパッチをやり直す",
   "command.clearFailedReport": "失敗リストをクリア",
   "command.acceptDiff": "現在の差分を承認して次へ",
   "command.copyPrompt": "プロンプトをコピー",

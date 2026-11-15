@@ -16,6 +16,7 @@
   "command.cancelPending": "Annuler les modifications en attente",
   "command.copyFailedReport": "Copier le rapport d'erreurs",
   "command.undoLastPatch": "Annuler le dernier patch",
+  "command.redo": "Rétablir le dernier correctif",
   "command.clearFailedReport": "Effacer la liste des erreurs",
   "command.acceptDiff": "Accepter le diff actuel et passer au suivant",
   "command.copyPrompt": "Copier le prompt",

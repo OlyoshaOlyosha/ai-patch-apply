@@ -48,6 +48,10 @@
         "title": "AI Patch: %command.undoLastPatch%"
       },
       {
+        "command": "aiPatchApply.redoLastPatch",
+        "title": "AI Patch: %command.redo%"
+      },
+      {
         "command": "aiPatchApply.clearFailedReport",
         "title": "AI Patch: %command.clearFailedReport%"
       },
@@ -74,6 +78,11 @@
         "command": "aiPatchApply.undoLastPatch",
         "key": "ctrl+alt+z",
         "mac": "cmd+alt+z"
+      },
+      {
+        "command": "aiPatchApply.redoLastPatch",
+        "key": "ctrl+alt+y",
+        "mac": "cmd+alt+y"
       },
       {
         "command": "aiPatchApply.acceptCurrentDiff",

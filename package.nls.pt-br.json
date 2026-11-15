@@ -16,6 +16,7 @@
   "command.cancelPending": "Cancelar alterações pendentes",
   "command.copyFailedReport": "Copiar o relatório de falhas",
   "command.undoLastPatch": "Desfazer o último patch",
+  "command.redo": "Refazer o último patch",
   "command.clearFailedReport": "Limpar a lista de falhas",
   "command.acceptDiff": "Aceitar o diff atual e ir para o próximo",
   "command.copyPrompt": "Copiar o prompt",

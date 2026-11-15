@@ -24,8 +24,11 @@
   "AI Patch: no failures to report": "AI Patch: нет ошибок для отчёта",
   "AI Patch: failure list cleared": "AI Patch: список ошибок очищен",
   "AI Patch: nothing to undo": "AI Patch: нечего откатывать",
-  "AI Patch: undone {0}, skipped {1} (changed manually).": "AI Patch: откат {0}, пропущено {1} (изменены вручную).",
-  "AI Patch: undone {0} file(s).": "AI Patch: откат {0} файл(ов).",
+  "AI Patch: nothing to redo": "AI Patch: нечего повторять",
+  "AI Patch: undone {0} file(s). Redo: Ctrl+Alt+Y.": "AI Patch: отменено файлов — {0}. Вернуть назад: Ctrl+Alt+Y.",
+  "AI Patch: undone {0}, skipped {1} (changed manually). Redo: Ctrl+Alt+Y.": "AI Patch: отменено {0}, пропущено {1} (изменено вручную). Вернуть назад: Ctrl+Alt+Y.",
+  "AI Patch: redone {0} file(s).": "AI Patch: повторно применено файлов — {0}.",
+  "AI Patch: redone {0}, skipped {1} (changed manually).": "AI Patch: повторно применено {0}, пропущено {1} (изменено вручную).",
   "AI Patch: {0} pending — diff tabs are open.": "AI Patch: {0} в ожидании — вкладки diff открыты.",
   "AI Patch: all changes are already in the files ({0}). Nothing applied.": "AI Patch: все изменения уже в файлах ({0}). Ничего не применено.",
   ", already applied: {0}": ", уже применено: {0}",
@@ -56,5 +59,6 @@
   "Some edits failed — copy the report for the AI.": "Часть правок не применилась — скопируйте отчёт для ИИ.",
   "Apply from Clipboard": "Применить из буфера обмена",
   "Copy Prompt": "Скопировать промпт",
-  "Copy Failed Report": "Скопировать отчёт об ошибках"
+  "Copy Failed Report": "Скопировать отчёт об ошибках",
+  "AI Patch: review restored — {0} pending file(s).": "AI Patch: ревью восстановлено — файлов в ожидании: {0}."
 }

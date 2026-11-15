@@ -79,6 +79,20 @@ async function main() {
   fs.writeFileSync(file, ORIGINAL);
   await vscode.env.clipboard.writeText(SAMPLE);
   await vscode.commands.executeCommand('aiPatchApply.applyFromClipboard');
+
+  // Resumable review: mid-review the pending edits are persisted and
+  // restorable (after a reload, activate() runs the same restore path).
+  const restored = await vscode.commands.executeCommand('aiPatchApply.restorePendingReview');
+  ok('pending review persisted and restorable', restored === 1);
+  let diffTabs = 0;
+  for (const g of vscode.window.tabGroups.all) {
+    for (const tab of g.tabs) {
+      const l = typeof tab.label === 'string' ? tab.label : '';
+      if (l.startsWith('🟣') || l.startsWith('🔵') || l.startsWith('🔴')) diffTabs++;
+    }
+  }
+  ok('restore re-opened the diff tabs', diffTabs >= 1);
+
   await vscode.commands.executeCommand('aiPatchApply.applyPending');
   ok(
     'apply flow modified the file on disk',
@@ -89,6 +103,18 @@ async function main() {
   await vscode.commands.executeCommand('aiPatchApply.undoLastPatch');
   ok(
     'undo restored the original content',
+    await waitForFile(file, (t) => t === ORIGINAL),
+  );
+
+  // Redo re-applies the patch; the second undo restores the original again.
+  await vscode.commands.executeCommand('aiPatchApply.redoLastPatch');
+  ok(
+    'redo re-applied the patch',
+    await waitForFile(file, (t) => t.includes('Hi, ${name}!')),
+  );
+  await vscode.commands.executeCommand('aiPatchApply.undoLastPatch');
+  ok(
+    'second undo restored the original',
     await waitForFile(file, (t) => t === ORIGINAL),
   );
 

@@ -24,8 +24,11 @@
   "AI Patch: no failures to report": "AI Patch: 報告すべき失敗はありません",
   "AI Patch: failure list cleared": "AI Patch: 失敗リストをクリアしました",
   "AI Patch: nothing to undo": "AI Patch: 元に戻すものはありません",
-  "AI Patch: undone {0}, skipped {1} (changed manually).": "AI Patch: {0} を元に戻し、{1} をスキップしました（手動で変更済み）。",
-  "AI Patch: undone {0} file(s).": "AI Patch: {0} ファイルを元に戻しました。",
+  "AI Patch: nothing to redo": "AI Patch: やり直す項目はありません",
+  "AI Patch: undone {0} file(s). Redo: Ctrl+Alt+Y.": "AI Patch: {0} 個のファイルを元に戻しました。やり直し: Ctrl+Alt+Y。",
+  "AI Patch: undone {0}, skipped {1} (changed manually). Redo: Ctrl+Alt+Y.": "AI Patch: {0} 個を元に戻し、{1} 個をスキップしました（手動で変更済み）。やり直し: Ctrl+Alt+Y。",
+  "AI Patch: redone {0} file(s).": "AI Patch: {0} 個のファイルを再適用しました。",
+  "AI Patch: redone {0}, skipped {1} (changed manually).": "AI Patch: {0} 個を再適用し、{1} 個をスキップしました（手動で変更済み）。",
   "AI Patch: {0} pending — diff tabs are open.": "AI Patch: {0} 件が待機中 — diff タブが開いています。",
   "AI Patch: all changes are already in the files ({0}). Nothing applied.": "AI Patch: すべての変更は既にファイル内にあります（{0}）。何も適用していません。",
   ", already applied: {0}": "、既に適用済み: {0}",
@@ -56,5 +59,6 @@
   "Some edits failed — copy the report for the AI.": "一部の編集が失敗しました。AI 用のレポートをコピーしてください。",
   "Apply from Clipboard": "クリップボードから適用",
   "Copy Prompt": "プロンプトをコピー",
-  "Copy Failed Report": "失敗レポートをコピー"
+  "Copy Failed Report": "失敗レポートをコピー",
+  "AI Patch: review restored — {0} pending file(s).": "AI Patch: レビューを復元しました — 保留中のファイル {0} 個。"
 }

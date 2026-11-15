@@ -16,6 +16,7 @@
   "command.cancelPending": "Отменить отложенные",
   "command.copyFailedReport": "Скопировать отчёт об ошибках",
   "command.undoLastPatch": "Отменить последний патч",
+  "command.redo": "Повторить последний патч",
   "command.clearFailedReport": "Очистить список ошибок",
   "command.acceptDiff": "Принять текущий diff и перейти к следующему",
   "command.copyPrompt": "Скопировать промпт",

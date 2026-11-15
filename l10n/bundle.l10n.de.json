@@ -24,8 +24,11 @@
   "AI Patch: no failures to report": "AI Patch: Keine Fehler zu melden",
   "AI Patch: failure list cleared": "AI Patch: Fehlerliste geleert",
   "AI Patch: nothing to undo": "AI Patch: Nichts rückgängig zu machen",
-  "AI Patch: undone {0}, skipped {1} (changed manually).": "AI Patch: {0} rückgängig gemacht, {1} übersprungen (manuell geändert).",
-  "AI Patch: undone {0} file(s).": "AI Patch: {0} Datei(en) rückgängig gemacht.",
+  "AI Patch: nothing to redo": "AI Patch: nichts wiederherzustellen",
+  "AI Patch: undone {0} file(s). Redo: Ctrl+Alt+Y.": "AI Patch: {0} Datei(en) rückgängig gemacht. Wiederherstellen: Ctrl+Alt+Y.",
+  "AI Patch: undone {0}, skipped {1} (changed manually). Redo: Ctrl+Alt+Y.": "AI Patch: {0} rückgängig gemacht, {1} übersprungen (manuell geändert). Wiederherstellen: Ctrl+Alt+Y.",
+  "AI Patch: redone {0} file(s).": "AI Patch: {0} Datei(en) wiederhergestellt.",
+  "AI Patch: redone {0}, skipped {1} (changed manually).": "AI Patch: {0} wiederhergestellt, {1} übersprungen (manuell geändert).",
   "AI Patch: {0} pending — diff tabs are open.": "AI Patch: {0} ausstehend — Diff-Tabs sind offen.",
   "AI Patch: all changes are already in the files ({0}). Nothing applied.": "AI Patch: Alle Änderungen sind bereits in den Dateien ({0}). Nichts angewendet.",
   ", already applied: {0}": ", bereits angewendet: {0}",
@@ -56,5 +59,6 @@
   "Some edits failed — copy the report for the AI.": "Einige Änderungen sind fehlgeschlagen — Bericht für die KI kopieren.",
   "Apply from Clipboard": "Aus der Zwischenablage anwenden",
   "Copy Prompt": "Prompt kopieren",
-  "Copy Failed Report": "Fehlerbericht kopieren"
+  "Copy Failed Report": "Fehlerbericht kopieren",
+  "AI Patch: review restored — {0} pending file(s).": "AI Patch: Review wiederhergestellt — {0} Datei(en) ausstehend."
 }

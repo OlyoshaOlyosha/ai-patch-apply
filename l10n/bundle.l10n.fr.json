@@ -24,8 +24,11 @@
   "AI Patch: no failures to report": "AI Patch : aucune erreur à signaler",
   "AI Patch: failure list cleared": "AI Patch : liste d'erreurs effacée",
   "AI Patch: nothing to undo": "AI Patch : rien à annuler",
-  "AI Patch: undone {0}, skipped {1} (changed manually).": "AI Patch : {0} annulé(s), {1} ignoré(s) (modifiés manuellement).",
-  "AI Patch: undone {0} file(s).": "AI Patch : {0} fichier(s) annulé(s).",
+  "AI Patch: nothing to redo": "AI Patch : rien à rétablir",
+  "AI Patch: undone {0} file(s). Redo: Ctrl+Alt+Y.": "AI Patch : {0} fichier(s) annulé(s). Rétablir : Ctrl+Alt+Y.",
+  "AI Patch: undone {0}, skipped {1} (changed manually). Redo: Ctrl+Alt+Y.": "AI Patch : {0} annulé(s), {1} ignoré(s) (modifiés manuellement). Rétablir : Ctrl+Alt+Y.",
+  "AI Patch: redone {0} file(s).": "AI Patch : {0} fichier(s) rétabli(s).",
+  "AI Patch: redone {0}, skipped {1} (changed manually).": "AI Patch : {0} rétabli(s), {1} ignoré(s) (modifiés manuellement).",
   "AI Patch: {0} pending — diff tabs are open.": "AI Patch : {0} en attente — les onglets de diff sont ouverts.",
   "AI Patch: all changes are already in the files ({0}). Nothing applied.": "AI Patch : toutes les modifications sont déjà dans les fichiers ({0}). Rien d'appliqué.",
   ", already applied: {0}": ", déjà appliqué : {0}",
@@ -56,5 +59,6 @@
   "Some edits failed — copy the report for the AI.": "Certaines modifications ont échoué — copiez le rapport pour l'IA.",
   "Apply from Clipboard": "Appliquer depuis le presse-papiers",
   "Copy Prompt": "Copier le prompt",
-  "Copy Failed Report": "Copier le rapport d'erreurs"
+  "Copy Failed Report": "Copier le rapport d'erreurs",
+  "AI Patch: review restored — {0} pending file(s).": "AI Patch : revue restaurée — {0} fichier(s) en attente."
 }

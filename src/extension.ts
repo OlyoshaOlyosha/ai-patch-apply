@@ -26,18 +26,19 @@ import {
   isTabSyncSuppressed,
   setTabSyncSuppressed,
   setOnReviewChanged,
+  setReviewContext,
   setPending,
   clearPending,
   removePendingFile,
-  showPendingTabs,
-  reopenPendingTabs,
   notifySameClipboardPending,
+  restorePendingReview,
 } from './review';
 import {
-  appendToSnapshot,
+  pushSnapshot,
   getAppliedHash,
   setAppliedHash,
   undoLastPatch,
+  redoLastPatch,
 } from './undo';
 import {
   HISTORY_LIMIT,
@@ -185,7 +186,7 @@ function updateStatusBar(): void {
   }
 }
 
-export function activate(context: vscode.ExtensionContext): void {
+export async function activate(context: vscode.ExtensionContext): Promise<void> {
   output = vscode.window.createOutputChannel('AI Patch');
   context.subscriptions.push(output);
   output.show(true);
@@ -220,6 +221,29 @@ export function activate(context: vscode.ExtensionContext): void {
     if (pending && pending.length > 0) void decor?.setFromPrepared(pending);
     else decor?.clear();
   });
+  setReviewContext(context);
+
+  // Resume a review interrupted by a window reload: re-open the diff tabs
+  // for the persisted pending changes. Also callable as a (hidden) command
+  // so the smoke test can exercise the restore path in-session.
+  const restoreCmd = vscode.commands.registerCommand(
+    'aiPatchApply.restorePendingReview',
+    async () => {
+      const cfg = vscode.workspace.getConfiguration('aiPatch');
+      const restored = await restorePendingReview(context, {
+        pinTabs: cfg.get<boolean>('pinDiffTabs', true),
+        focusFirst: cfg.get<boolean>('focusFirstDiff', true),
+      });
+      if (restored > 0) {
+        log(`pending review restored: ${restored} file(s)`);
+        vscode.window.showInformationMessage(
+          t('AI Patch: review restored — {0} pending file(s).', restored),
+        );
+      }
+      return restored;
+    },
+  );
+  context.subscriptions.push(restoreCmd);
 
   context.subscriptions.push(
     vscode.window.tabGroups.onDidChangeTabs(() => {
@@ -518,7 +542,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
       const count = fresh.length;
       try {
-        await appendToSnapshot(context, fresh, getLastPendingHash());
+        await pushSnapshot(context, fresh, getLastPendingHash());
 
         log('');
         log(`Applying: ${count} file(s)`);
@@ -691,8 +715,35 @@ export function activate(context: vscode.ExtensionContext): void {
 
       const msg =
         result.skipped.length > 0
-          ? t('AI Patch: undone {0}, skipped {1} (changed manually).', result.restored.length, result.skipped.length)
-          : t('AI Patch: undone {0} file(s).', result.restored.length);
+          ? t('AI Patch: undone {0}, skipped {1} (changed manually). Redo: Ctrl+Alt+Y.', result.restored.length, result.skipped.length)
+          : t('AI Patch: undone {0} file(s). Redo: Ctrl+Alt+Y.', result.restored.length);
+      void vscode.window
+        .showInformationMessage(msg, btnShowLog())
+        .then((choice) => {
+          if (choice === btnShowLog()) output.show();
+        });
+    },
+  );
+
+  const redoCmd = vscode.commands.registerCommand(
+    'aiPatchApply.redoLastPatch',
+    async () => {
+      const result = await redoLastPatch(context, log);
+      if (!result) {
+        vscode.window.showInformationMessage(t('AI Patch: nothing to redo'));
+        return;
+      }
+
+      await recordHistory(
+        context,
+        makeSimpleEntry(Date.now(), 'redo', result.restored.length, result.skipped.length),
+      );
+      updateStatusBar();
+
+      const msg =
+        result.skipped.length > 0
+          ? t('AI Patch: redone {0}, skipped {1} (changed manually).', result.restored.length, result.skipped.length)
+          : t('AI Patch: redone {0} file(s).', result.restored.length);
       void vscode.window
         .showInformationMessage(msg, btnShowLog())
         .then((choice) => {
@@ -752,7 +803,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
       try {
         await commitPrepared([p], log);
-        await appendToSnapshot(context, [p], getLastPendingHash());
+        await pushSnapshot(context, [p], getLastPendingHash());
         log(`accept ${p.file}: applied, ${pending.length - 1} left`);
         await recordHistory(
           context,
@@ -838,6 +889,7 @@ export function activate(context: vscode.ExtensionContext): void {
     clearFailedCmd,
     copyPromptCmd,
     undoCmd,
+    redoCmd,
     acceptCurrentDiffCmd,
     openPendingCmd,
     showHistoryCmd,
@@ -858,6 +910,9 @@ export function activate(context: vscode.ExtensionContext): void {
     updateStatusBar();
     log(`restored ${lastFailed.length} failure(s) from the previous session`);
   }
+
+  // Resume the pending review, if any (fires after the status bar exists).
+  await vscode.commands.executeCommand('aiPatchApply.restorePendingReview');
 }
 
 export function deactivate(): void {

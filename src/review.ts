@@ -142,18 +142,127 @@ export async function reopenPendingTabs(): Promise<void> {
   await revealPendingPreviews();
 }
 
+// --- resumable review -------------------------------------------------------
+
+// Pending edits survive a window reload: the prepared changes are
+// serialized to globalState when the review starts and cleared when it
+// ends (apply / cancel / last accept). Otherwise a reload mid-review — or
+// a replaced clipboard — would lose the AI's work with no way back except
+// re-copying from the chat.
+const PENDING_KEY = 'aiPatch.pendingReview';
+
+/** Cap for persisted review contents (original + new content chars). */
+export const PERSIST_MAX_CHARS = 1_000_000;
+
+interface PersistedReview {
+  initialCount: number;
+  hash: string | null;
+  changes: Array<{
+    uri: string;
+    file: string;
+    isNew: boolean;
+    isDelete: boolean;
+    originalContent: string;
+    newContent: string;
+  }>;
+}
+
+function reviewBytes(changes: PreparedChange[]): number {
+  return changes.reduce((n, p) => n + p.originalContent.length + p.newContent.length, 0);
+}
+
+// Buffer mirror of the persisted review — globalState read-backs right
+// after an update are stale within a session, so the buffer is what
+// in-session restores see. After a reload the buffer is empty and the
+// real globalState is read.
+let persistedReview: PersistedReview | undefined;
+
+async function persistReview(
+  context: vscode.ExtensionContext,
+): Promise<void> {
+  if (!pending || pending.length === 0) {
+    persistedReview = undefined;
+    await context.globalState.update(PENDING_KEY, undefined);
+    return;
+  }
+  if (reviewBytes(pending) > PERSIST_MAX_CHARS) {
+    // Too large to serialize — the review still works in this session,
+    // it just will not survive a reload.
+    persistedReview = undefined;
+    await context.globalState.update(PENDING_KEY, undefined);
+    return;
+  }
+  const saved: PersistedReview = {
+    initialCount: pendingInitialCount,
+    hash: lastPendingHash,
+    changes: pending.map((p) => ({
+      uri: p.uri.toString(),
+      file: p.file,
+      isNew: p.isNew,
+      isDelete: p.isDelete,
+      originalContent: p.originalContent,
+      newContent: p.newContent,
+    })),
+  };
+  persistedReview = saved;
+  await context.globalState.update(PENDING_KEY, saved);
+}
+
+/**
+ * Restores a persisted review (called at activate and available as the
+ * `aiPatchApply.restorePendingReview` command for tests). Re-opens the
+ * diff tabs. Returns the number of restored files, 0 if nothing was saved.
+ */
+export async function restorePendingReview(
+  context: vscode.ExtensionContext,
+  options: { pinTabs: boolean; focusFirst: boolean },
+): Promise<number> {
+  const saved =
+    persistedReview ?? context.globalState.get<PersistedReview>(PENDING_KEY);
+  if (!saved || !saved.changes || saved.changes.length === 0) return 0;
+
+  pending = saved.changes.map((c) => ({
+    uri: vscode.Uri.parse(c.uri),
+    file: c.file,
+    isNew: c.isNew,
+    isDelete: c.isDelete,
+    originalContent: c.originalContent,
+    newContent: c.newContent,
+  }));
+  pendingInitialCount = saved.initialCount;
+  lastPendingHash = saved.hash;
+
+  setTabSyncSuppressed(true);
+  try {
+    await closeOldPreviews();
+    await previewPrepared(pending, makePreviewUri, options);
+  } finally {
+    setTabSyncSuppressed(false);
+  }
+  fireChanged();
+  return pending.length;
+}
+
 // --- review lifecycle -------------------------------------------------------
 
 // Called by extension.ts after every state change so the status bar, view
 // and decorations stay in sync. One hook, set once at activate.
 let onChanged: (() => void) | undefined;
+let reviewContext: vscode.ExtensionContext | undefined;
 
 export function setOnReviewChanged(cb: () => void): void {
   onChanged = cb;
 }
 
+export function setReviewContext(context: vscode.ExtensionContext): void {
+  reviewContext = context;
+}
+
 function fireChanged(): void {
   onChanged?.();
+  // Persist after every lifecycle change; cleared state also clears the
+  // stored review. No-op when persistence is not wired up (tests).
+  if (reviewContext) void persistReview(reviewContext);
 }
 
 export function setPending(prepared: PreparedChange[], initialCount: number, hash: string | null): void {
@@ -175,23 +284,6 @@ export function removePendingFile(file: string): void {
   pending = pending.filter((p) => p.file !== file);
   lastPendingHash = null;
   if (pending.length === 0) pendingInitialCount = 0;
-  fireChanged();
-}
-
-// Reopens the diff tabs for the current pending set (same as the "same
-// clipboard pressed again" path).
-export async function showPendingTabs(options: {
-  pinTabs: boolean;
-  focusFirst: boolean;
-}): Promise<void> {
-  if (!pending || pending.length === 0) return;
-  setTabSyncSuppressed(true);
-  try {
-    await closeOldPreviews();
-    await previewPrepared(pending, makePreviewUri, options);
-  } finally {
-    setTabSyncSuppressed(false);
-  }
   fireChanged();
 }
 

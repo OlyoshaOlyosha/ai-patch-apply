@@ -16,6 +16,7 @@
   "command.cancelPending": "取消待定更改",
   "command.copyFailedReport": "复制失败报告",
   "command.undoLastPatch": "撤销上一个补丁",
+  "command.redo": "重做上一个补丁",
   "command.clearFailedReport": "清除失败列表",
   "command.acceptDiff": "接受当前差异并转到下一个",
   "command.copyPrompt": "复制提示词",

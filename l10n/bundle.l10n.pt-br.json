@@ -24,8 +24,11 @@
   "AI Patch: no failures to report": "AI Patch: não há falhas para relatar",
   "AI Patch: failure list cleared": "AI Patch: lista de falhas limpa",
   "AI Patch: nothing to undo": "AI Patch: nada para desfazer",
-  "AI Patch: undone {0}, skipped {1} (changed manually).": "AI Patch: desfeito {0}, ignorado {1} (modificados manualmente).",
-  "AI Patch: undone {0} file(s).": "AI Patch: desfeito(s) {0} arquivo(s).",
+  "AI Patch: nothing to redo": "AI Patch: nada para refazer",
+  "AI Patch: undone {0} file(s). Redo: Ctrl+Alt+Y.": "AI Patch: {0} arquivo(s) desfeito(s). Refazer: Ctrl+Alt+Y.",
+  "AI Patch: undone {0}, skipped {1} (changed manually). Redo: Ctrl+Alt+Y.": "AI Patch: {0} desfeito(s), {1} ignorado(s) (alterados manualmente). Refazer: Ctrl+Alt+Y.",
+  "AI Patch: redone {0} file(s).": "AI Patch: {0} arquivo(s) refeito(s).",
+  "AI Patch: redone {0}, skipped {1} (changed manually).": "AI Patch: {0} refeito(s), {1} ignorado(s) (alterados manualmente).",
   "AI Patch: {0} pending — diff tabs are open.": "AI Patch: {0} pendentes — as abas de diff estão abertas.",
   "AI Patch: all changes are already in the files ({0}). Nothing applied.": "AI Patch: todas as alterações já estão nos arquivos ({0}). Nada foi aplicado.",
   ", already applied: {0}": ", já aplicado: {0}",
@@ -56,5 +59,6 @@
   "Some edits failed — copy the report for the AI.": "Algumas alterações falharam — copie o relatório para a IA.",
   "Apply from Clipboard": "Aplicar da área de transferência",
   "Copy Prompt": "Copiar o prompt",
-  "Copy Failed Report": "Copiar o relatório de falhas"
+  "Copy Failed Report": "Copiar o relatório de falhas",
+  "AI Patch: review restored — {0} pending file(s).": "AI Patch: revisão restaurada — {0} arquivo(s) pendente(s)."
 }

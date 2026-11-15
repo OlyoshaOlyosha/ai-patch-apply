@@ -16,6 +16,7 @@
   "command.cancelPending": "Cancel Pending",
   "command.copyFailedReport": "Copy Failed Report",
   "command.undoLastPatch": "Undo Last Patch",
+  "command.redo": "Redo Last Patch",
   "command.clearFailedReport": "Clear Failed Report",
   "command.acceptDiff": "Accept Current Diff and Go to Next",
   "command.copyPrompt": "Copy Prompt",

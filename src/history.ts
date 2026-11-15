@@ -18,7 +18,7 @@ export type MatchStrategy =
   | 'new'
   | 'delete';
 
-export type HistoryKind = 'prepare' | 'apply' | 'undo';
+export type HistoryKind = 'prepare' | 'apply' | 'undo' | 'redo';
 
 export interface FailureRecord {
   file: string;
@@ -153,7 +153,7 @@ export function makePrepareEntry(
 
 export function makeSimpleEntry(
   ts: number,
-  kind: 'apply' | 'undo',
+  kind: 'apply' | 'undo' | 'redo',
   files: number,
   skipped: number,
 ): HistoryEntry {
@@ -174,6 +174,7 @@ export interface HistoryAggregate {
   prepareRuns: number;
   applyRuns: number;
   undoRuns: number;
+  redoRuns: number;
   /** Files prepared across all prepare runs. */
   preparedFiles: number;
   /** Files actually committed (apply runs). */
@@ -206,6 +207,7 @@ export function aggregate(entries: HistoryEntry[]): HistoryAggregate {
     prepareRuns: 0,
     applyRuns: 0,
     undoRuns: 0,
+    redoRuns: 0,
     preparedFiles: 0,
     appliedFiles: 0,
     failedChanges: 0,
@@ -231,8 +233,10 @@ export function aggregate(entries: HistoryEntry[]): HistoryAggregate {
     } else if (e.kind === 'apply') {
       agg.applyRuns++;
       agg.appliedFiles += e.files;
-    } else {
+    } else if (e.kind === 'undo') {
       agg.undoRuns++;
+    } else {
+      agg.redoRuns++;
     }
   }
 
@@ -292,7 +296,11 @@ export function formatHistory(entries: HistoryEntry[]): string {
       `files rejected entirely ${a.atomicRejectedFiles}`,
   );
   parts.push(`- Apply runs: ${a.applyRuns} — files applied ${a.appliedFiles}`);
-  parts.push(`- Undo runs: ${a.undoRuns}\n`);
+  parts.push(`- Undo runs: ${a.undoRuns}`);
+  if (a.redoRuns > 0) {
+    parts.push(`- Redo runs: ${a.redoRuns}`);
+  }
+  parts.push('');
 
   if (a.byReason.length > 0) {
     parts.push('## Failure reasons\n');
@@ -324,7 +332,9 @@ export function formatHistory(entries: HistoryEntry[]): string {
           `${e.alreadyApplied} already applied`
         : e.kind === 'apply'
           ? `apply: ${e.files} file(s) applied, ${e.skipped} skipped (changed since preview)`
-          : `undo: ${e.files} file(s) restored, ${e.skipped} skipped (changed after apply)`;
+          : e.kind === 'undo'
+            ? `undo: ${e.files} file(s) restored, ${e.skipped} skipped (changed after apply)`
+            : `redo: ${e.files} file(s) re-applied, ${e.skipped} skipped (changed after undo)`;
     parts.push(`- ${formatTs(e.ts)} — ${line}`);
     for (const r of e.atomicRejections) {
       parts.push(`  - rejected entirely: ${r}`);
