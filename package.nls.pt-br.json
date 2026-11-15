@@ -14,5 +14,6 @@
   "command.undoLastPatch": "Desfazer o último patch",
   "command.clearFailedReport": "Limpar a lista de falhas",
   "command.acceptDiff": "Aceitar o diff atual e ir para o próximo",
-  "command.copyPrompt": "Copiar o prompt"
+  "command.copyPrompt": "Copiar o prompt",
+  "command.showHistory": "Mostrar histórico de patches"
 }

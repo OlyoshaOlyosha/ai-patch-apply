@@ -14,5 +14,6 @@
   "command.undoLastPatch": "最後のパッチを元に戻す",
   "command.clearFailedReport": "失敗リストをクリア",
   "command.acceptDiff": "現在の差分を承認して次へ",
-  "command.copyPrompt": "プロンプトをコピー"
+  "command.copyPrompt": "プロンプトをコピー",
+  "command.showHistory": "パッチ履歴を表示"
 }

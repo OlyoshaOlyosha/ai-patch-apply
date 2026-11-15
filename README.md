@@ -57,6 +57,9 @@ The `Function:` part is optional. Two operational markers are supported:
 | AI Patch: Copy Failed Report | — |
 | AI Patch: Clear Failed Report | — |
 | AI Patch: Copy Prompt | — |
+| AI Patch: Show Patch History | — |
+
+Every apply attempt is journaled locally (counts, file names and failure reasons — never file contents). Open `AI Patch: Show Patch History` to see totals, the most frequent failure reasons and how often the AI's code blocks had to be matched fuzzily — useful for telling "the AI got the format wrong" from "the extension mis-matched".
 
 ## Settings
 
@@ -85,6 +88,6 @@ code --install-extension ai-patch-apply-<version>.vsix
 
 Open the folder in VS Code and press `F5`. A second window ("Extension Development Host") opens — test the command there.
 
-Run the unit tests with `npm test`. After changing UI strings, run `npm run check-l10n` to make sure every locale bundle is in sync.
+Run the unit tests with `npm test`. After changing UI strings, run `npm run check-l10n` to make sure every locale bundle is in sync. To run the live smoke test (real VS Code, 21 checks): `node scripts/verify-live.js` — the same test runs in CI on every push.
 
 Bug reports and contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for the setup and the few rules the codebase lives by. Found a problem? [Open an issue](https://github.com/OlyoshaOlyosha/ai-patch-apply/issues) (there is a template; a clipboard sample makes it fixable in minutes).

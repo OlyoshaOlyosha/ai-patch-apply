@@ -14,5 +14,6 @@
   "command.undoLastPatch": "Letzten Patch zurücknehmen",
   "command.clearFailedReport": "Fehlerliste leeren",
   "command.acceptDiff": "Aktuellen Diff übernehmen und zum nächsten wechseln",
-  "command.copyPrompt": "Prompt kopieren"
+  "command.copyPrompt": "Prompt kopieren",
+  "command.showHistory": "Patch-Verlauf anzeigen"
 }

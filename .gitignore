@@ -2,6 +2,9 @@ node_modules/
 out/
 *.vsix
 
+# Downloaded test VS Code for @vscode/test-electron (~1 GB, re-downloads on demand)
+.vscode-test/
+
 # Editor / agent tools
 .opencode/
 .serena/

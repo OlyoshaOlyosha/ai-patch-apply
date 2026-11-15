@@ -13,6 +13,13 @@ import {
 import { PatchDecorationProvider } from './decorations';
 import { PatchViewProvider } from './view';
 import { PROMPT_TEMPLATE } from './prompt';
+import {
+  HISTORY_LIMIT,
+  HistoryEntry,
+  makePrepareEntry,
+  makeSimpleEntry,
+  formatHistory,
+} from './history';
 
 const t = vscode.l10n.t;
 
@@ -39,6 +46,8 @@ const patchContents = new Map<string, string>();
 const BIG_FILE_LINES = 5000;
 const SNAPSHOT_KEY = 'aiPatch.lastSnapshot';
 const APPLIED_HASH_KEY = 'aiPatch.lastAppliedHash';
+const HISTORY_KEY = 'aiPatch.patchHistory';
+const FAILED_STATE_KEY = 'aiPatch.lastFailedState';
 
 interface PatchSnapshot {
   timestamp: number;
@@ -93,6 +102,42 @@ function hashText(s: string): string {
     h = (h * 31 + s.charCodeAt(i)) | 0;
   }
   return h.toString(36) + ':' + s.length;
+}
+
+// Patch-history journal: append one entry per apply attempt, evicting the
+// oldest past the limit. Contents are never stored — only counts, file
+// names and canonical failure reasons. The journal lives in a module-level
+// buffer: globalState.update only queues a persistence write, so a
+// read-back right after update can still return the old value — the buffer
+// is the source of truth for the running session.
+let historyCache: HistoryEntry[] | undefined;
+
+function loadHistory(context: vscode.ExtensionContext): HistoryEntry[] {
+  if (!historyCache) {
+    historyCache = context.globalState.get<HistoryEntry[]>(HISTORY_KEY) ?? [];
+  }
+  return historyCache;
+}
+
+async function recordHistory(
+  context: vscode.ExtensionContext,
+  entry: HistoryEntry,
+): Promise<void> {
+  const history = loadHistory(context);
+  history.push(entry);
+  if (history.length > HISTORY_LIMIT) {
+    history.splice(0, history.length - HISTORY_LIMIT);
+  }
+  await context.globalState.update(HISTORY_KEY, history.slice());
+}
+
+// lastFailed survives a window reload: the failure report button and the
+// "copy for AI" flow stay usable after restarting VS Code.
+async function saveFailedState(context: vscode.ExtensionContext): Promise<void> {
+  await context.globalState.update(FAILED_STATE_KEY, {
+    failed: lastFailed,
+    projectRoot: lastProjectRoot ? lastProjectRoot.fsPath : undefined,
+  });
 }
 
 class PatchContentProvider implements vscode.TextDocumentContentProvider {
@@ -484,6 +529,17 @@ export function activate(context: vscode.ExtensionContext): void {
         });
         lastFailed = result.failed;
         lastProjectRoot = result.projectRoot;
+        await recordHistory(
+          context,
+          makePrepareEntry(Date.now(), {
+            files: result.prepared.length,
+            alreadyApplied: result.alreadyApplied,
+            atomicRejections: result.atomicRejections.map((a) => a.file),
+            failures: result.failed.map((f) => ({ file: f.file, reason: f.reason })),
+            matchedVia: result.matchedVia,
+          }),
+        );
+        await saveFailedState(context);
         const elapsed = Date.now() - t0;
 
         log('');
@@ -706,6 +762,10 @@ export function activate(context: vscode.ExtensionContext): void {
         await commitPrepared(fresh, log);
         const elapsed = Date.now() - t0;
         log(`Applied in ${elapsed}ms`);
+        await recordHistory(
+          context,
+          makeSimpleEntry(Date.now(), 'apply', fresh.length, stale.length),
+        );
 
         if (lastPendingHash) {
           await context.globalState.update(APPLIED_HASH_KEY, lastPendingHash);
@@ -816,11 +876,25 @@ export function activate(context: vscode.ExtensionContext): void {
 
   const clearFailedCmd = vscode.commands.registerCommand(
     'aiPatchApply.clearFailedReport',
-    () => {
+    async () => {
       lastFailed = [];
+      await saveFailedState(context);
       updateStatusBar();
       log('failure list cleared');
       vscode.window.showInformationMessage(t('AI Patch: failure list cleared'));
+    },
+  );
+
+  const showHistoryCmd = vscode.commands.registerCommand(
+    'aiPatchApply.showHistory',
+    async () => {
+      const history = loadHistory(context);
+      const doc = await vscode.workspace.openTextDocument({
+        content: formatHistory(history),
+        language: 'markdown',
+      });
+      await vscode.window.showTextDocument(doc);
+      log(`history shown (${history.length} entries)`);
     },
   );
 
@@ -918,6 +992,10 @@ export function activate(context: vscode.ExtensionContext): void {
       await context.globalState.update(SNAPSHOT_KEY, undefined);
       await context.globalState.update(APPLIED_HASH_KEY, undefined);
       log('applied patch hash cleared');
+      await recordHistory(
+        context,
+        makeSimpleEntry(Date.now(), 'undo', restored.length, skipped.length),
+      );
 
       const msg =
         skipped.length > 0
@@ -1067,7 +1145,24 @@ export function activate(context: vscode.ExtensionContext): void {
     undoCmd,
     acceptCurrentDiffCmd,
     openPendingCmd,
+    showHistoryCmd,
   );
+
+  // The failure state from the previous session keeps the report button
+  // working across window reloads — errors fixed manually are exactly the
+  // ones a user still needs to report afterwards.
+  const savedState = context.globalState.get<{
+    failed: Failed[];
+    projectRoot?: string;
+  }>(FAILED_STATE_KEY);
+  if (savedState && Array.isArray(savedState.failed) && savedState.failed.length > 0) {
+    lastFailed = savedState.failed;
+    if (savedState.projectRoot) {
+      lastProjectRoot = vscode.Uri.file(savedState.projectRoot);
+    }
+    updateStatusBar();
+    log(`restored ${lastFailed.length} failure(s) from the previous session`);
+  }
 }
 
 async function appendToSnapshot(

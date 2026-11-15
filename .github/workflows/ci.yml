@@ -18,3 +18,19 @@ jobs:
       - run: npm run compile
       - run: npm test
       - run: npm run check-l10n
+
+  # Live smoke test against a real VS Code (scripts/verify-live.js).
+  # Downloads a test VS Code (~1 GB cache) — runs on push to main/dev only,
+  # not on every PR.
+  integration:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run compile
+      - run: xvfb-run -a node scripts/verify-live.js

@@ -14,5 +14,6 @@
   "command.undoLastPatch": "Отменить последний патч",
   "command.clearFailedReport": "Очистить список ошибок",
   "command.acceptDiff": "Принять текущий diff и перейти к следующему",
-  "command.copyPrompt": "Скопировать промпт"
+  "command.copyPrompt": "Скопировать промпт",
+  "command.showHistory": "Показать историю патчей"
 }

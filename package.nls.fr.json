@@ -14,5 +14,6 @@
   "command.undoLastPatch": "Annuler le dernier patch",
   "command.clearFailedReport": "Effacer la liste des erreurs",
   "command.acceptDiff": "Accepter le diff actuel et passer au suivant",
-  "command.copyPrompt": "Copier le prompt"
+  "command.copyPrompt": "Copier le prompt",
+  "command.showHistory": "Afficher l’historique des correctifs"
 }

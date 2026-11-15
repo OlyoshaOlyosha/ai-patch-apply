@@ -58,6 +58,10 @@
       {
         "command": "aiPatchApply.copyPrompt",
         "title": "AI Patch: %command.copyPrompt%"
+      },
+      {
+        "command": "aiPatchApply.showHistory",
+        "title": "AI Patch: %command.showHistory%"
       }
     ],
     "keybindings": [
@@ -138,6 +142,7 @@
   "devDependencies": {
     "@types/node": "^20.11.0",
     "@types/vscode": "^1.85.0",
+    "@vscode/test-electron": "^2.4.0",
     "typescript": "^5.4.0",
     "vitest": "^2.1.0"
   },

@@ -14,5 +14,6 @@
   "command.undoLastPatch": "撤销上一个补丁",
   "command.clearFailedReport": "清除失败列表",
   "command.acceptDiff": "接受当前差异并转到下一个",
-  "command.copyPrompt": "复制提示词"
+  "command.copyPrompt": "复制提示词",
+  "command.showHistory": "显示补丁历史"
 }

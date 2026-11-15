@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { Change } from './parser';
+import { MatchStrategy } from './history';
 import {
   findUnclaimed,
   findUnclaimedCanonical,
@@ -63,6 +64,8 @@ export interface PrepareResult {
   failed: Failed[];
   alreadyApplied: number;
   atomicRejections: AtomicRejection[];
+  /** How the AI's BEFORE blocks were located — feeds the patch history. */
+  matchedVia: Partial<Record<MatchStrategy, number>>;
   projectRoot?: vscode.Uri;
 }
 
@@ -79,10 +82,16 @@ export async function prepareChanges(
   const fuzzyMatch = options.fuzzyMatch ?? true;
   const failureThreshold = options.failureThreshold ?? 0.4;
   const folders = vscode.workspace.workspaceFolders;
-  if (!folders || folders.length === 0) {
-    log('  no workspace folder open');
-    return { prepared: [], failed: [], alreadyApplied: 0, atomicRejections: [] };
-  }
+    if (!folders || folders.length === 0) {
+      log('  no workspace folder open');
+      return {
+        prepared: [],
+        failed: [],
+        alreadyApplied: 0,
+        atomicRejections: [],
+        matchedVia: {},
+      };
+    }
 
   const failed: Failed[] = [];
   const validChanges: Change[] = [];
@@ -113,6 +122,11 @@ export async function prepareChanges(
   const prepared: PreparedChange[] = [];
   const atomicRejections: AtomicRejection[] = [];
   let alreadyApplied = 0;
+  const matchedVia: Partial<Record<MatchStrategy, number>> = {};
+
+  const bump = (s: MatchStrategy): void => {
+    matchedVia[s] = (matchedVia[s] ?? 0) + 1;
+  };
 
   const projectRoot = await findProjectRoot(byFile);
   log(`Project root: ${projectRoot.fsPath}`);
@@ -161,6 +175,7 @@ export async function prepareChanges(
       const after = fileChanges.map((c) => c.after).join('\n');
       log(`  → Will be created (${after.length} chars)`);
       log('');
+      bump('new');
       prepared.push({
         uri,
         file,
@@ -205,6 +220,7 @@ export async function prepareChanges(
       log(`  Type: delete`);
       log(`  → Will be deleted (${delText.length} chars)`);
       log('');
+      bump('delete');
       prepared.push({
         uri: existing,
         file,
@@ -247,7 +263,12 @@ export async function prepareChanges(
 
     const text = doc.getText();
     const eol = detectEol(text);
-    const matches: Array<{ idx: number; before: string; after: string }> = [];
+    const matches: Array<{
+      idx: number;
+      before: string;
+      after: string;
+      strategy: MatchStrategy;
+    }> = [];
     const fileFailed: Failed[] = [];
 
     for (const c of fileChanges) {
@@ -280,6 +301,7 @@ export async function prepareChanges(
       let idx = findUnclaimed(text, beforeN, claimed);
       let usedBefore = beforeN;
       let usedAfter = afterN;
+      let strategy: MatchStrategy = 'exact';
 
       if (idx === -1 && c.before !== beforeN) {
         idx = findUnclaimed(text, c.before, claimed);
@@ -293,6 +315,7 @@ export async function prepareChanges(
         const canonIdx = findUnclaimedCanonical(text, beforeN, claimed);
         if (canonIdx !== -1) {
           log(`    → canonical match (punctuation/whitespace differed)`);
+          strategy = 'canonical';
           idx = canonIdx;
           usedBefore = text.slice(canonIdx, canonIdx + beforeN.length);
           usedAfter = afterN;
@@ -305,6 +328,7 @@ export async function prepareChanges(
           log(
             `    → fuzzy match at position ${fuzzy.idx} (length ${fuzzy.len}, whitespace-insensitive)`,
           );
+          strategy = 'fuzzy';
           idx = fuzzy.idx;
           usedBefore = text.slice(fuzzy.idx, fuzzy.idx + fuzzy.len);
           usedAfter = afterN;
@@ -317,6 +341,7 @@ export async function prepareChanges(
           log(
             `    → fuzzy match (different indent) at position ${fuzzy2.idx}`,
           );
+          strategy = 'fuzzy-indent';
           idx = fuzzy2.idx;
           usedBefore = text.slice(fuzzy2.idx, fuzzy2.idx + fuzzy2.len);
           usedAfter = afterN;
@@ -368,7 +393,7 @@ export async function prepareChanges(
         continue;
       }
 
-      matches.push({ idx, before: usedBefore, after: usedAfter });
+      matches.push({ idx, before: usedBefore, after: usedAfter, strategy });
     }
 
     // Atomic decision: if a file has ≥2 failures and the failure ratio
@@ -410,6 +435,7 @@ export async function prepareChanges(
       log(`  Type: modify (${n} ${n === 1 ? 'edit' : 'edits'})`);
       log(`  → Will be overwritten (${text.length} → ${newContent.length} chars)`);
       log('');
+      for (const m of matches) bump(m.strategy);
       prepared.push({
         uri: existing,
         file,
@@ -424,7 +450,7 @@ export async function prepareChanges(
     }
   }
 
-  return { prepared, failed, alreadyApplied, atomicRejections, projectRoot };
+  return { prepared, failed, alreadyApplied, atomicRejections, matchedVia, projectRoot };
 }
 
 export interface PreviewOptions {

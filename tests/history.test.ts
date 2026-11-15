@@ -1,0 +1,143 @@
+import { describe, it, expect } from 'vitest';
+import {
+  makePrepareEntry,
+  makeSimpleEntry,
+  countMatchedVia,
+  trimHistory,
+  aggregate,
+  formatHistory,
+  formatTs,
+  HistoryEntry,
+} from '../src/history';
+
+// Fixed local timestamp so formatTs output is deterministic.
+const T = new Date(2026, 10, 15, 14, 3, 22).getTime();
+
+function prepareEntry(overrides: Partial<Parameters<typeof makePrepareEntry>[1]> = {}): HistoryEntry {
+  return makePrepareEntry(T, {
+    files: 2,
+    alreadyApplied: 1,
+    atomicRejections: ['a.ts'],
+    failures: [
+      { file: 'a.ts', reason: 'BEFORE not found in file' },
+      { file: 'b.ts', reason: 'BEFORE not found in file' },
+    ],
+    matchedVia: { exact: 3, fuzzy: 1 },
+    ...overrides,
+  });
+}
+
+describe('formatTs', () => {
+  it('formats a local timestamp', () => {
+    expect(formatTs(T)).toBe('2026-11-15 14:03:22');
+  });
+});
+
+describe('countMatchedVia', () => {
+  it('tallies strategies and skips undefined', () => {
+    expect(
+      countMatchedVia([
+        { matchedVia: 'exact' },
+        { matchedVia: 'fuzzy' },
+        { matchedVia: 'exact' },
+        {},
+        { matchedVia: undefined },
+      ]),
+    ).toEqual({ exact: 2, fuzzy: 1 });
+  });
+});
+
+describe('makePrepareEntry', () => {
+  it('maps failure count into skipped', () => {
+    const e = prepareEntry();
+    expect(e.kind).toBe('prepare');
+    expect(e.skipped).toBe(2);
+    expect(e.files).toBe(2);
+    expect(e.atomicRejections).toEqual(['a.ts']);
+  });
+});
+
+describe('makeSimpleEntry', () => {
+  it('leaves prepare-only fields empty', () => {
+    const e = makeSimpleEntry(T, 'apply', 3, 1);
+    expect(e.kind).toBe('apply');
+    expect(e.files).toBe(3);
+    expect(e.skipped).toBe(1);
+    expect(e.failures).toEqual([]);
+    expect(e.matchedVia).toEqual({});
+  });
+});
+
+describe('trimHistory', () => {
+  it('returns the array unchanged under the limit', () => {
+    const entries = [prepareEntry(), makeSimpleEntry(T, 'apply', 1, 0)];
+    expect(trimHistory(entries, 10)).toBe(entries);
+  });
+
+  it('keeps only the newest entries over the limit', () => {
+    const entries = Array.from({ length: 5 }, (_, i) => makeSimpleEntry(T + i, 'apply', i, 0));
+    const trimmed = trimHistory(entries, 3);
+    expect(trimmed).toHaveLength(3);
+    expect(trimmed.map((e) => e.files)).toEqual([2, 3, 4]);
+  });
+});
+
+describe('aggregate', () => {
+  it('sums totals and sorts tallies by count', () => {
+    const entries = [
+      prepareEntry(),
+      makeSimpleEntry(T + 1, 'apply', 2, 0),
+      makeSimpleEntry(T + 2, 'undo', 2, 1),
+      prepareEntry({
+        files: 1,
+        alreadyApplied: 0,
+        atomicRejections: [],
+        failures: [{ file: 'c.ts', reason: 'empty BEFORE fragment' }],
+        matchedVia: { exact: 1 },
+      }),
+    ];
+    const a = aggregate(entries);
+    expect(a.totalEntries).toBe(4);
+    expect(a.prepareRuns).toBe(2);
+    expect(a.applyRuns).toBe(1);
+    expect(a.undoRuns).toBe(1);
+    expect(a.preparedFiles).toBe(3);
+    expect(a.appliedFiles).toBe(2);
+    expect(a.failedChanges).toBe(3);
+    expect(a.alreadyApplied).toBe(1);
+    expect(a.atomicRejectedFiles).toBe(1);
+    expect(a.byReason).toEqual([
+      { reason: 'BEFORE not found in file', count: 2 },
+      { reason: 'empty BEFORE fragment', count: 1 },
+    ]);
+    expect(a.byMatchedVia).toEqual([
+      { strategy: 'exact', count: 4 },
+      { strategy: 'fuzzy', count: 1 },
+    ]);
+  });
+
+  it('handles an empty journal', () => {
+    const a = aggregate([]);
+    expect(a.totalEntries).toBe(0);
+    expect(a.byReason).toEqual([]);
+    expect(a.byMatchedVia).toEqual([]);
+  });
+});
+
+describe('formatHistory', () => {
+  it('explains itself when the journal is empty', () => {
+    const md = formatHistory([]);
+    expect(md).toContain('No patch history yet');
+  });
+
+  it('includes totals, reasons, strategies and entries', () => {
+    const md = formatHistory([prepareEntry(), makeSimpleEntry(T + 1000, 'apply', 2, 0)]);
+    expect(md).toContain('2026-11-15 14:03:22');
+    expect(md).toContain('## Totals');
+    expect(md).toContain('`BEFORE not found in file` — 2');
+    expect(md).toContain('`exact` — 3');
+    expect(md).toContain('rejected entirely: a.ts');
+    expect(md).toContain('matched: exact ×3, fuzzy ×1');
+    expect(md).toContain('apply: 2 file(s) applied, 0 skipped');
+  });
+});

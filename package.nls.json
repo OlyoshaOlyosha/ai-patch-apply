@@ -14,5 +14,6 @@
   "command.undoLastPatch": "Undo Last Patch",
   "command.clearFailedReport": "Clear Failed Report",
   "command.acceptDiff": "Accept Current Diff and Go to Next",
-  "command.copyPrompt": "Copy Prompt"
+  "command.copyPrompt": "Copy Prompt",
+  "command.showHistory": "Show Patch History"
 }
