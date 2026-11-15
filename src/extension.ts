@@ -11,6 +11,7 @@ import {
   LABEL_PREFIXES,
 } from './applier';
 import { PatchDecorationProvider } from './decorations';
+import { PatchViewProvider } from './view';
 import { PROMPT_TEMPLATE } from './prompt';
 
 const t = vscode.l10n.t;
@@ -26,6 +27,7 @@ let output: vscode.OutputChannel;
 let decor: PatchDecorationProvider | undefined;
 let applyItem: vscode.StatusBarItem | undefined;
 let failItem: vscode.StatusBarItem | undefined;
+let patchView: PatchViewProvider | undefined;
 let pending: PreparedChange[] | null = null;
 let pendingInitialCount = 0;
 let lastFailed: Failed[] = [];
@@ -73,24 +75,6 @@ function extractFileFromLabel(label: string): string | undefined {
   return undefined;
 }
 
-// Reasons are canonical English strings (they go into the AI report as-is).
-// This maps them to Russian for the log / notifications shown to the user.
-function translateReason(reason: string): string {
-  // Parameterised reasons — match by prefix and extract the value.
-  if (reason.startsWith('unsupported marker: ')) {
-    return t('unrecognized marker {0}', reason.slice('unsupported marker: '.length));
-  }
-  const tooLarge = reason.match(/^AFTER too large \((\d+) chars\)$/);
-  if (tooLarge) {
-    return t('AFTER too large ({0} chars)', tooLarge[1]);
-  }
-
-  // Simple reasons: the canonical English string doubles as the l10n key.
-  // l10n.t passes the input through when no bundle entry exists, so unknown
-  // reasons surface as English — that is desired (the AI report uses them too).
-  return t(reason);
-}
-
 function getDirtyTargets(prepared: PreparedChange[]): string[] {
   const dirty: string[] = [];
   for (const p of prepared) {
@@ -131,6 +115,8 @@ function makePreviewUri(file: string, content: string): vscode.Uri {
 function updateStatusBar(): void {
   const hasPending = pending && pending.length > 0;
   const hasFailed = lastFailed.length > 0;
+
+  if (patchView) patchView.setPending(pending, lastFailed.length);
 
   if (applyItem) {
     if (hasPending) {
@@ -198,7 +184,7 @@ function syncPendingWithTabs(): void {
   }
   const filtered = pending.filter((p) => openFiles.has(p.file));
   if (filtered.length !== pending.length) {
-    log(`синхронизация: ${pending.length} → ${filtered.length}`);
+    log(`tab sync: ${pending.length} → ${filtered.length}`);
     pending = filtered;
     updateStatusBar();
     if (decor) void decor.setFromPrepared(pending);
@@ -408,7 +394,7 @@ export function activate(context: vscode.ExtensionContext): void {
   output = vscode.window.createOutputChannel('AI Patch');
   context.subscriptions.push(output);
   output.show(true);
-  log('расширение активировано');
+  log('extension activated');
 
   context.subscriptions.push(
     vscode.workspace.registerTextDocumentContentProvider(
@@ -426,6 +412,9 @@ export function activate(context: vscode.ExtensionContext): void {
   applyItem.command = 'aiPatchApply.applyPending';
   context.subscriptions.push(applyItem);
 
+  patchView = new PatchViewProvider();
+  context.subscriptions.push(patchView.register('aiPatchApply.view'));
+
   failItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 999);
   failItem.command = 'aiPatchApply.copyFailedReport';
   context.subscriptions.push(failItem);
@@ -442,7 +431,7 @@ export function activate(context: vscode.ExtensionContext): void {
     async () => {
       try {
         const text = await vscode.env.clipboard.readText();
-        log(`длина буфера: ${text.length}`);
+        log(`clipboard length: ${text.length}`);
         if (!text || !text.trim()) {
           vscode.window.showInformationMessage(t('AI Patch: clipboard is empty'));
           return;
@@ -452,7 +441,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
         const appliedHash = context.globalState.get<string>(APPLIED_HASH_KEY);
         if (hash === appliedHash && (!pending || pending.length === 0)) {
-          log('буфер совпадает с последним применённым патчем — пропуск');
+          log('clipboard matches the last applied patch — skipping');
           void vscode.window
             .showInformationMessage(
               t(
@@ -469,7 +458,7 @@ export function activate(context: vscode.ExtensionContext): void {
         }
 
         if (hash === lastPendingHash && pending && pending.length > 0) {
-          log('тот же буфер, pending есть — открываю вкладки diff');
+          log('same clipboard with pending edits — reopening diff tabs');
           await revealPendingPreviews();
           vscode.window.showInformationMessage(
             t('AI Patch: {0} pending — diff tabs are open.', pending.length),
@@ -483,7 +472,7 @@ export function activate(context: vscode.ExtensionContext): void {
           afterMaxBytes: cfg.get<number>('afterMaxBytes', 20000),
         });
         if (changes.length === 0) {
-          log('блоков изменений не найдено');
+          log('no change blocks found');
           vscode.window.showWarningMessage(t('AI Patch: no changes found'));
           return;
         }
@@ -500,16 +489,16 @@ export function activate(context: vscode.ExtensionContext): void {
         log('');
         const alreadyPart =
           result.alreadyApplied > 0
-            ? `, уже применено ${result.alreadyApplied}`
+            ? `, already applied ${result.alreadyApplied}`
             : '';
         log(
-          `Итого: файлов ${result.prepared.length}${alreadyPart}, ошибок ${result.failed.length} (${elapsed}мс)`,
+          `Total: ${result.prepared.length} file(s)${alreadyPart}, failures ${result.failed.length} (${elapsed}ms)`,
         );
         if (result.failed.length > 0) {
           log('');
           for (const f of result.failed) {
-            log(`  ОШИБКА ${f.file}`);
-            log(`    причина: ${translateReason(f.reason)}`);
+            log(`  FAILED ${f.file}`);
+            log(`    reason: ${f.reason}`);
           }
         }
 
@@ -517,7 +506,7 @@ export function activate(context: vscode.ExtensionContext): void {
           log('');
           for (const a of result.atomicRejections) {
             log(
-              `  ⚠ ОТКЛОНЁН ЦЕЛИКОМ: ${a.file} (${a.failedChanges} из ${a.totalChanges} правок не найдены)`,
+              `  ⚠ REJECTED ENTIRELY: ${a.file} (${a.failedChanges} of ${a.totalChanges} edits not found)`,
             );
           }
         }
@@ -525,7 +514,7 @@ export function activate(context: vscode.ExtensionContext): void {
         if (result.prepared.length === 0) {
           updateStatusBar();
           if (result.alreadyApplied > 0 && result.failed.length === 0) {
-            log('все изменения уже в файлах — применять нечего');
+            log('all changes already in the files — nothing to apply');
             vscode.window.showInformationMessage(
               t(
                 'AI Patch: all changes are already in the files ({0}). Nothing applied.',
@@ -572,7 +561,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
         const dirty = getDirtyTargets(pending);
         if (dirty.length > 0) {
-          log(`несохранённые изменения: ${dirty.join(', ')}`);
+          log(`unsaved changes: ${dirty.join(', ')}`);
           void vscode.window.showWarningMessage(
             t(
               'AI Patch: unsaved changes in files ({0}). Preview uses the current state from the editor.',
@@ -632,7 +621,7 @@ export function activate(context: vscode.ExtensionContext): void {
             }
           });
       } catch (err) {
-        log(`ОШИБКА: ${err}`);
+        log(`ERROR: ${err}`);
         vscode.window.showErrorMessage(`AI Patch: ${err}`);
       }
     },
@@ -645,8 +634,8 @@ export function activate(context: vscode.ExtensionContext): void {
         vscode.window.showInformationMessage(t('AI Patch: no pending edits'));
         return;
       }
-      // Перед применением проверить, не изменились ли файлы с момента preview.
-      // Иначе перезапишем ручные правки, которые пользователь внес после открытия diff.
+      // Check whether the files changed since the preview before applying.
+      // Otherwise manual edits made after the diff was opened would be overwritten.
       const stale: string[] = [];
       const fresh: PreparedChange[] = [];
       for (const p of pending) {
@@ -679,7 +668,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
       if (stale.length > 0) {
         log('');
-        log('Файлы изменились с момента preview, пропущены:');
+        log('Files changed since preview, skipped:');
         for (const f of stale) log(`  ${f}`);
       }
       if (fresh.length === 0) {
@@ -712,15 +701,15 @@ export function activate(context: vscode.ExtensionContext): void {
         await appendToSnapshot(context, fresh);
 
         log('');
-        log(`Применение: ${count} файл(ов)`);
+        log(`Applying: ${count} file(s)`);
         const t0 = Date.now();
         await commitPrepared(fresh, log);
         const elapsed = Date.now() - t0;
-        log(`Применено за ${elapsed}мс`);
+        log(`Applied in ${elapsed}ms`);
 
         if (lastPendingHash) {
           await context.globalState.update(APPLIED_HASH_KEY, lastPendingHash);
-          log(`Хэш сохранён: ${lastPendingHash}`);
+          log(`Hash saved: ${lastPendingHash}`);
         }
 
         const hasFailed = lastFailed.length > 0;
@@ -758,7 +747,7 @@ export function activate(context: vscode.ExtensionContext): void {
             }
           });
       } catch (err) {
-        log(`ОШИБКА: ${err}`);
+        log(`ERROR: ${err}`);
         vscode.window.showErrorMessage(`AI Patch: ${err}`);
       } finally {
         pending = null;
@@ -790,7 +779,7 @@ export function activate(context: vscode.ExtensionContext): void {
       }
       updateStatusBar();
       decor?.clear();
-      log('отложенные правки отменены');
+      log('pending edits cancelled');
       vscode.window.showInformationMessage(t('AI Patch: pending edits cancelled'));
     },
   );
@@ -830,7 +819,7 @@ export function activate(context: vscode.ExtensionContext): void {
     () => {
       lastFailed = [];
       updateStatusBar();
-      log('список ошибок очищен');
+      log('failure list cleared');
       vscode.window.showInformationMessage(t('AI Patch: failure list cleared'));
     },
   );
@@ -839,7 +828,7 @@ export function activate(context: vscode.ExtensionContext): void {
     'aiPatchApply.copyPrompt',
     async () => {
       await vscode.env.clipboard.writeText(PROMPT_TEMPLATE);
-      log(`промпт скопирован (${PROMPT_TEMPLATE.length} симв.)`);
+      log(`prompt copied (${PROMPT_TEMPLATE.length} chars)`);
       vscode.window.showInformationMessage(
         t('AI Patch: prompt copied ({0} chars). Paste it into the AI chat.', PROMPT_TEMPLATE.length),
       );
@@ -855,7 +844,7 @@ export function activate(context: vscode.ExtensionContext): void {
         return;
       }
 
-      log(`откат: восстанавливается ${snapshot.files.length} файл(ов)`);
+      log(`undo: restoring ${snapshot.files.length} file(s)`);
       const restored: string[] = [];
       const skipped: string[] = [];
 
@@ -869,17 +858,17 @@ export function activate(context: vscode.ExtensionContext): void {
               const doc = await vscode.workspace.openTextDocument(uri);
               current = doc.getText();
             } catch {
-              log(`  пропуск ${file.uri}: уже отсутствует`);
+              log(`  skip ${file.uri}: already absent`);
               skipped.push(file.uri);
               continue;
             }
             if (current !== file.newContent) {
-              log(`  пропуск ${file.uri}: содержимое изменено после применения`);
+              log(`  skip ${file.uri}: content changed after apply`);
               skipped.push(file.uri);
               continue;
             }
             await vscode.workspace.fs.delete(uri);
-            log(`  удалён ${file.uri}`);
+            log(`  deleted ${file.uri}`);
             restored.push(file.uri);
           } else if (file.isDelete) {
             let exists = false;
@@ -890,7 +879,7 @@ export function activate(context: vscode.ExtensionContext): void {
               exists = false;
             }
             if (exists) {
-              log(`  пропуск ${file.uri}: файл уже существует (создан вручную)`);
+              log(`  skip ${file.uri}: file already exists (created manually)`);
               skipped.push(file.uri);
               continue;
             }
@@ -900,12 +889,12 @@ export function activate(context: vscode.ExtensionContext): void {
             await vscode.workspace.applyEdit(edit);
             const newDoc = await vscode.workspace.openTextDocument(uri);
             await newDoc.save();
-            log(`  восстановлен ${file.uri}`);
+            log(`  restored ${file.uri}`);
             restored.push(file.uri);
           } else {
             const doc = await vscode.workspace.openTextDocument(uri);
             if (doc.getText() !== file.newContent) {
-              log(`  пропуск ${file.uri}: содержимое изменено после применения`);
+              log(`  skip ${file.uri}: content changed after apply`);
               skipped.push(file.uri);
               continue;
             }
@@ -917,18 +906,18 @@ export function activate(context: vscode.ExtensionContext): void {
             edit.replace(uri, fullRange, file.originalContent);
             await vscode.workspace.applyEdit(edit);
             await doc.save();
-            log(`  восстановлен ${file.uri}`);
+            log(`  restored ${file.uri}`);
             restored.push(file.uri);
           }
         } catch (err) {
-          log(`  не удалось откатить ${file.uri}: ${err}`);
+          log(`  failed to undo ${file.uri}: ${err}`);
           skipped.push(file.uri);
         }
       }
 
       await context.globalState.update(SNAPSHOT_KEY, undefined);
       await context.globalState.update(APPLIED_HASH_KEY, undefined);
-      log('хэш применённого патча очищен');
+      log('applied patch hash cleared');
 
       const msg =
         skipped.length > 0
@@ -981,7 +970,7 @@ export function activate(context: vscode.ExtensionContext): void {
       }
 
       if (stale) {
-        log(`принять ${p.file}: пропущено — файл изменился с момента preview`);
+        log(`accept ${p.file}: skipped — file changed since preview`);
         void vscode.window.showWarningMessage(
           t(
             'AI Patch: {0} changed since preview — not applying. Press Ctrl+Alt+V again.',
@@ -994,9 +983,9 @@ export function activate(context: vscode.ExtensionContext): void {
       try {
         await commitPrepared([p], log);
         await appendToSnapshot(context, [p]);
-        log(`принять ${p.file}: применено, осталось ${pending.length - 1}`);
+        log(`accept ${p.file}: applied, ${pending.length - 1} left`);
       } catch (err) {
-        log(`ОШИБКА применения ${p.file}: ${err}`);
+        log(`ERROR applying ${p.file}: ${err}`);
         vscode.window.showErrorMessage(`AI Patch: ${err}`);
         return;
       }
@@ -1009,7 +998,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
       if (pending.length === 0) {
         const total = pendingInitialCount;
-        log(`всё разобрано: применено файлов за сессию — ${total}`);
+        log(`all done: files applied this session — ${total}`);
         vscode.window.showInformationMessage(
           t('AI Patch: all done — applied {0} file(s). Undo: Ctrl+Alt+Z.', total),
         );
@@ -1044,6 +1033,30 @@ export function activate(context: vscode.ExtensionContext): void {
     },
   );
 
+  // Tree-view click: reopen the diff tab for one pending file. The tab may
+  // already be gone (closed manually) — in that case there is nothing to show.
+  const openPendingCmd = vscode.commands.registerCommand(
+    'aiPatchApply.openPending',
+    async (change: PreparedChange) => {
+      for (const group of vscode.window.tabGroups.all) {
+        for (const tab of group.tabs) {
+          const input = tab.input;
+          if (!(input instanceof vscode.TabInputTextDiff)) continue;
+          const label = typeof tab.label === 'string' ? tab.label : '';
+          if (!LABEL_PREFIXES.some((p) => label.startsWith(p))) continue;
+          if (extractFileFromLabel(label) !== change.file) continue;
+          await vscode.commands.executeCommand(
+            'vscode.diff',
+            input.original,
+            input.modified,
+            label,
+          );
+          return;
+        }
+      }
+    },
+  );
+
   context.subscriptions.push(
     previewCmd,
     applyCmd,
@@ -1053,6 +1066,7 @@ export function activate(context: vscode.ExtensionContext): void {
     copyPromptCmd,
     undoCmd,
     acceptCurrentDiffCmd,
+    openPendingCmd,
   );
 }
 

@@ -4,5 +4,7 @@
   "config.fuzzyMatch": "Correspondance floue de BEFORE : ignorer tabulations vs espaces et espaces de fin de ligne.",
   "config.pinDiffTabs": "Épingler les onglets de diff pour qu'ils ne se remplacent pas mutuellement (mode aperçu de VS Code).",
   "config.focusFirstDiff": "Après l'aperçu, activer le premier onglet de diff plutôt que le dernier.",
-  "config.failureThreshold": "Si la part d'éditions échouées dans un fichier est >= à cette valeur (et qu'il y en a au moins 2), tout le fichier est rejeté. 0.4 = 40 %."
+  "config.failureThreshold": "Si la part d'éditions échouées dans un fichier est >= à cette valeur (et qu'il y en a au moins 2), tout le fichier est rejeté. 0.4 = 40 %.",
+  "views.container": "AI Patch Apply",
+  "views.view": "AI Patch"
 }

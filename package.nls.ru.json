@@ -4,5 +4,7 @@
   "config.fuzzyMatch": "Нечёткое сопоставление BEFORE: игнорировать табы vs пробелы и trailing whitespace.",
   "config.pinDiffTabs": "Фиксировать diff-вкладки, чтобы они не вытесняли друг друга (preview-режим VS Code).",
   "config.focusFirstDiff": "После preview переходить на первую diff-вкладку вместо последней.",
-  "config.failureThreshold": "Если доля неудавшихся правок в файле ≥ этого значения (и их не меньше 2), весь файл отклоняется целиком. 0.4 = 40%."
+  "config.failureThreshold": "Если доля неудавшихся правок в файле ≥ этого значения (и их не меньше 2), весь файл отклоняется целиком. 0.4 = 40%.",
+  "views.container": "AI Patch Apply",
+  "views.view": "AI Patch"
 }

@@ -49,7 +49,7 @@ export function parseClipboard(
     // instead of silently dropping the block — which used to happen and
     // made real problems invisible.
     const fail = (reason: string): void => {
-      log(`  ошибка ${fname}: ${reason}`);
+      log(`  failed ${fname}: ${reason}`);
       changes.push({
         file: fname,
         func: ffunc,
@@ -74,7 +74,7 @@ export function parseClipboard(
         // "unsupported marker" with an empty body and the AI has no idea
         // what content to re-emit.
         const a = extractBlock(chunk, '**AFTER:**') ?? extractFirstBlock(chunk);
-        log(`  ошибка ${fname}: unsupported marker ${ffunc}`);
+        log(`  failed ${fname}: unsupported marker ${ffunc}`);
         changes.push({
           file: fname,
           func: ffunc,
@@ -141,7 +141,7 @@ export function parseClipboard(
 
 // Narrow list of bracketed values that request a whole-file operation we
 // do not support. Anything not in this set — `(imports + helper)`,
-// `(before get_all_tasks)`, `(секция table)` — is treated as a positional
+// `(before get_all_tasks)`, `(section table)` — is treated as a positional
 // hint, not an operation. Those blocks keep their BEFORE/AFTER and are
 // parsed like normal changes.
 const OPERATIONAL_MARKERS = new Set([

@@ -4,5 +4,7 @@
   "config.fuzzyMatch": "Ignore tabs vs spaces and trailing whitespace when matching BEFORE.",
   "config.pinDiffTabs": "Pin diff tabs so they do not replace each other (VS Code preview mode).",
   "config.focusFirstDiff": "Focus the first diff tab instead of the last after preview.",
-  "config.failureThreshold": "If the share of failed edits in a file is >= this value (and there are at least 2), the whole file is rejected. 0.4 = 40%."
+  "config.failureThreshold": "If the share of failed edits in a file is >= this value (and there are at least 2), the whole file is rejected. 0.4 = 40%.",
+  "views.container": "AI Patch Apply",
+  "views.view": "AI Patch"
 }

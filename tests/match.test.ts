@@ -10,7 +10,6 @@ import {
   preview,
   detectEol,
   normalizeEol,
-  pluralPravka,
   langFromPath,
 } from '../src/match';
 
@@ -120,23 +119,6 @@ describe('normalizeEol', () => {
   });
   it('leaves already-correct input unchanged', () => {
     expect(normalizeEol('a\nb', '\n')).toBe('a\nb');
-  });
-});
-
-describe('pluralPravka', () => {
-  it('singular', () => {
-    expect(pluralPravka(1)).toBe('правка');
-    expect(pluralPravka(21)).toBe('правка');
-  });
-  it('few', () => {
-    expect(pluralPravka(2)).toBe('правки');
-    expect(pluralPravka(3)).toBe('правки');
-    expect(pluralPravka(4)).toBe('правки');
-  });
-  it('many', () => {
-    expect(pluralPravka(5)).toBe('правок');
-    expect(pluralPravka(11)).toBe('правок');
-    expect(pluralPravka(12)).toBe('правок');
   });
 });
 

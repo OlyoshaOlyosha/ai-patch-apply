@@ -15,7 +15,6 @@ import {
   preview,
   detectEol,
   normalizeEol,
-  pluralPravka,
   langFromPath,
 } from './match';
 
@@ -81,7 +80,7 @@ export async function prepareChanges(
   const failureThreshold = options.failureThreshold ?? 0.4;
   const folders = vscode.workspace.workspaceFolders;
   if (!folders || folders.length === 0) {
-    log('  нет открытой папки workspace');
+    log('  no workspace folder open');
     return { prepared: [], failed: [], alreadyApplied: 0, atomicRejections: [] };
   }
 
@@ -116,14 +115,14 @@ export async function prepareChanges(
   let alreadyApplied = 0;
 
   const projectRoot = await findProjectRoot(byFile);
-  log(`Корень проекта: ${projectRoot.fsPath}`);
+  log(`Project root: ${projectRoot.fsPath}`);
   log('');
 
   for (const [file, fileChanges] of byFile) {
     const existing = await resolveFile(file, projectRoot);
     const wantsNew = fileChanges.some((c) => c.func.toLowerCase() === '(new file)');
 
-    log(`Файл: ${file}`);
+    log(`File: ${file}`);
 
     if (wantsNew) {
       const uri = resolveNewFilePath(file, projectRoot);
@@ -137,15 +136,15 @@ export async function prepareChanges(
             preview: preview(c.before),
           });
         }
-        log(`  ⚠ путь выходит за пределы проекта — пропуск: ${uri.fsPath}`);
+        log(`  ⚠ path escapes the project root — skipping: ${uri.fsPath}`);
         continue;
       }
       const junkReason = looksLikeJunk(file);
       if (junkReason) {
-        log(`  ⚠ новый файл в типично игнорируемом месте (${junkReason}): ${file}`);
+        log(`  ⚠ new file in a typically ignored location (${junkReason}): ${file}`);
       }
       const alreadyInRoot = await pathExists(uri);
-      log(`  Тип: новый файл`);
+      log(`  Type: new file`);
 
       if (alreadyInRoot) {
         for (const c of fileChanges) {
@@ -160,7 +159,7 @@ export async function prepareChanges(
         continue;
       }
       const after = fileChanges.map((c) => c.after).join('\n');
-      log(`  → Будет создан (${after.length} симв.)`);
+      log(`  → Will be created (${after.length} chars)`);
       log('');
       prepared.push({
         uri,
@@ -203,8 +202,8 @@ export async function prepareChanges(
         continue;
       }
       const delText = delDoc.getText();
-      log(`  Тип: удаление`);
-      log(`  → Будет удалён (${delText.length} симв.)`);
+      log(`  Type: delete`);
+      log(`  → Will be deleted (${delText.length} chars)`);
       log('');
       prepared.push({
         uri: existing,
@@ -253,11 +252,11 @@ export async function prepareChanges(
 
     for (const c of fileChanges) {
       if (c.after.trim() === '') {
-        log(`    ⚠ пустой AFTER — фрагмент будет удалён без замены`);
+        log(`    ⚠ empty AFTER — the fragment will be deleted without replacement`);
       }
       if (c.before.trim().length > 0 && c.before.trim().length < 5) {
         log(
-          `    ⚠ короткий BEFORE (${c.before.trim().length} симв.) — высокий риск ложного совпадения`,
+          `    ⚠ short BEFORE (${c.before.trim().length} chars) — high false-match risk`,
         );
       }
       if (c.before.trim() === '') {
@@ -293,7 +292,7 @@ export async function prepareChanges(
       if (idx === -1) {
         const canonIdx = findUnclaimedCanonical(text, beforeN, claimed);
         if (canonIdx !== -1) {
-          log(`    → совпадение по канонической форме (дефисы/пробелы отличались)`);
+          log(`    → canonical match (punctuation/whitespace differed)`);
           idx = canonIdx;
           usedBefore = text.slice(canonIdx, canonIdx + beforeN.length);
           usedAfter = afterN;
@@ -304,7 +303,7 @@ export async function prepareChanges(
         const fuzzy = findUnclaimedFuzzy(text, beforeN, claimed);
         if (fuzzy) {
           log(
-            `    → нечёткое совпадение на позиции ${fuzzy.idx} (длина ${fuzzy.len}, без учёта пробелов)`,
+            `    → fuzzy match at position ${fuzzy.idx} (length ${fuzzy.len}, whitespace-insensitive)`,
           );
           idx = fuzzy.idx;
           usedBefore = text.slice(fuzzy.idx, fuzzy.idx + fuzzy.len);
@@ -316,7 +315,7 @@ export async function prepareChanges(
         const fuzzy2 = findUnclaimedFuzzyIndent(text, beforeN, claimed);
         if (fuzzy2) {
           log(
-            `    → нечёткое совпадение (другой отступ) на позиции ${fuzzy2.idx}`,
+            `    → fuzzy match (different indent) at position ${fuzzy2.idx}`,
           );
           idx = fuzzy2.idx;
           usedBefore = text.slice(fuzzy2.idx, fuzzy2.idx + fuzzy2.len);
@@ -324,14 +323,14 @@ export async function prepareChanges(
         }
       }
 
-      // BEFORE не нашли — возможно, правка уже применена.
-      // Ищем AFTER как подстроку в файле; если он там уже есть, эта
-      // правка уже в коде. Не ошибка — пропускаем, чтобы не засорять
-      // failed-отчёт.
+      // BEFORE not found — the edit may already be applied.
+      // Search AFTER as a substring; if it is already in the file,
+      // the edit is already in the code. Not an error — skip, so the
+      // failed report stays clean.
       if (idx === -1 && c.after.trim() !== '') {
         const afterN2 = normalizeEol(c.after, eol);
         if (text.includes(afterN2)) {
-          log(`    → уже применено (AFTER найден в файле)`);
+          log(`    → already applied (AFTER found in file)`);
           alreadyApplied++;
           continue;
         }
@@ -342,7 +341,7 @@ export async function prepareChanges(
         let charDiff: CharDiff | undefined;
         if (hint) {
           log(
-            `    → похожий блок найден на строке ${hint.lineNumber} (отступ отличается на ${hint.indentDiff})`,
+            `    → similar block at line ${hint.lineNumber} (indent differs by ${hint.indentDiff})`,
           );
           // If indent matches (diff === 0) but content still differs,
           // pinpoint the first divergent character so the report can tell
@@ -352,7 +351,7 @@ export async function prepareChanges(
             if (d) {
               charDiff = d;
               log(
-                `    → первое расхождение: строка ${d.lineNumber}, колонка ${d.colNumber} — у тебя ${d.beforeChar} (${d.beforeCode}), в файле ${d.fileChar} (${d.fileCode})`,
+                `    → first divergence: line ${d.lineNumber}, column ${d.colNumber} — BEFORE has ${d.beforeChar} (${d.beforeCode}), file has ${d.fileChar} (${d.fileCode})`,
               );
             }
           }
@@ -385,7 +384,7 @@ export async function prepareChanges(
 
     if (rejectWholeFile && matches.length > 0) {
       log(
-        `  ⚠ ОТКЛОНЁН ЦЕЛИКОМ: ${failedChanges} из ${totalChanges} правок не найдены`,
+        `  ⚠ REJECTED ENTIRELY: ${failedChanges} of ${totalChanges} edits not found`,
       );
       log('');
       atomicRejections.push({ file, totalChanges, failedChanges });
@@ -408,8 +407,8 @@ export async function prepareChanges(
 
     if (newContent !== text) {
       const n = fileChanges.length;
-      log(`  Тип: изменение (${n} ${pluralPravka(n)})`);
-      log(`  → Будет перезаписан (${text.length} → ${newContent.length} симв.)`);
+      log(`  Type: modify (${n} ${n === 1 ? 'edit' : 'edits'})`);
+      log(`  → Will be overwritten (${text.length} → ${newContent.length} chars)`);
       log('');
       prepared.push({
         uri: existing,
@@ -420,7 +419,7 @@ export async function prepareChanges(
         newContent,
       });
     } else {
-      log(`  → Пропущен: нет изменений`);
+      log(`  → Skipped: no changes`);
       log('');
     }
   }
@@ -490,7 +489,7 @@ export async function previewPrepared(
   }
 }
 
-function diffStat(before: string, after: string): string {
+export function diffStat(before: string, after: string): string {
   if (before === '' && after === '') return '';
   if (before === '') {
     const lines = after.split('\n').filter((l) => l.trim().length > 0).length;
@@ -531,18 +530,18 @@ export async function commitPrepared(
 
   for (const p of prepared) {
     if (p.isDelete) {
-      log(`  ${p.file} — удаление`);
+      log(`  ${p.file} — delete`);
       edit.deleteFile(p.uri, { recursive: false });
       continue;
     }
     if (p.isNew) {
-      log(`  ${p.file} — создание`);
+      log(`  ${p.file} — create`);
       await ensureParentDir(p.uri);
       edit.createFile(p.uri, { overwrite: false, ignoreIfExists: true });
       edit.insert(p.uri, new vscode.Position(0, 0), p.newContent);
       continue;
     }
-    log(`  ${p.file} — перезапись`);
+    log(`  ${p.file} — overwrite`);
     const doc = await vscode.workspace.openTextDocument(p.uri);
     const fullRange = new vscode.Range(
       doc.positionAt(0),
@@ -564,7 +563,7 @@ export async function commitPrepared(
         await doc.save();
       }
     } catch (err) {
-      log(`  ОШИБКА сохранения ${p.file}: ${err}`);
+      log(`  ERROR saving ${p.file}: ${err}`);
       throw err;
     }
   }

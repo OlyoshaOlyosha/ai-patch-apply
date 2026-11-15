@@ -80,12 +80,6 @@ export function normalizeEol(s: string, eol: string): string {
   return s.replace(/\r\n|\r|\n/g, eol);
 }
 
-export function pluralPravka(n: number): string {
-  if (n % 10 === 1 && n % 100 !== 11) return 'правка';
-  if ([2, 3, 4].includes(n % 10) && ![12, 13, 14].includes(n % 100)) return 'правки';
-  return 'правок';
-}
-
 export function langFromPath(path: string): string {
   const ext = path.split('.').pop()?.toLowerCase() ?? '';
   const map: Record<string, string> = {

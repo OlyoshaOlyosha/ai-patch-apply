@@ -4,5 +4,7 @@
   "config.fuzzyMatch": "Correspondência difusa de BEFORE: ignorar tabs vs. espaços e espaços no fim da linha.",
   "config.pinDiffTabs": "Fixar as abas de diff para que não substituam umas às outras (modo de preview do VS Code).",
   "config.focusFirstDiff": "Após o preview, focar a primeira aba de diff em vez da última.",
-  "config.failureThreshold": "Se a proporção de edições falhadas em um arquivo for >= a este valor (e houver pelo menos 2), o arquivo inteiro é rejeitado. 0.4 = 40%."
+  "config.failureThreshold": "Se a proporção de edições falhadas em um arquivo for >= a este valor (e houver pelo menos 2), o arquivo inteiro é rejeitado. 0.4 = 40%.",
+  "views.container": "AI Patch Apply",
+  "views.view": "AI Patch"
 }

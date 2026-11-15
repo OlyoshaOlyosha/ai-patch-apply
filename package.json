@@ -77,6 +77,23 @@
         "mac": "cmd+alt+w"
       }
     ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "aiPatch",
+          "title": "%views.container%",
+          "icon": "$(diff)"
+        }
+      ]
+    },
+    "views": {
+      "aiPatch": [
+        {
+          "id": "aiPatchApply.view",
+          "name": "%views.view%"
+        }
+      ]
+    },
     "configuration": {
       "title": "%config.title%",
       "properties": {
@@ -115,7 +132,8 @@
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "check-l10n": "node scripts/check-l10n.js"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",

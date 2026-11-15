@@ -4,5 +4,7 @@
   "config.fuzzyMatch": "Unscharfe Zuordnung von BEFORE: Tabs vs. Leerzeichen und nachgestellte Leerzeichen ignorieren.",
   "config.pinDiffTabs": "Diff-Tabs anheften, damit sie sich nicht gegenseitig verdrängen (VS Code-Vorschaumodus).",
   "config.focusFirstDiff": "Nach der Vorschau zum ersten Diff-Tab statt zum letzten springen.",
-  "config.failureThreshold": "Wenn der Anteil fehlgeschlagener Änderungen in einer Datei ≥ diesem Wert ist (und mindestens 2), wird die gesamte Datei abgelehnt. 0.4 = 40 %."
+  "config.failureThreshold": "Wenn der Anteil fehlgeschlagener Änderungen in einer Datei ≥ diesem Wert ist (und mindestens 2), wird die gesamte Datei abgelehnt. 0.4 = 40 %.",
+  "views.container": "AI Patch Apply",
+  "views.view": "AI Patch"
 }
