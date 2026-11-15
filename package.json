@@ -29,35 +29,35 @@
     "commands": [
       {
         "command": "aiPatchApply.applyFromClipboard",
-        "title": "AI Patch: Apply from Clipboard"
+        "title": "AI Patch: %command.apply%"
       },
       {
         "command": "aiPatchApply.applyPending",
-        "title": "AI Patch: Apply Pending"
+        "title": "AI Patch: %command.applyPending%"
       },
       {
         "command": "aiPatchApply.cancelPending",
-        "title": "AI Patch: Cancel Pending"
+        "title": "AI Patch: %command.cancelPending%"
       },
       {
         "command": "aiPatchApply.copyFailedReport",
-        "title": "AI Patch: Copy Failed Report"
+        "title": "AI Patch: %command.copyFailedReport%"
       },
       {
         "command": "aiPatchApply.undoLastPatch",
-        "title": "AI Patch: Undo Last Patch"
+        "title": "AI Patch: %command.undoLastPatch%"
       },
       {
         "command": "aiPatchApply.clearFailedReport",
-        "title": "AI Patch: Clear Failed Report"
+        "title": "AI Patch: %command.clearFailedReport%"
       },
       {
         "command": "aiPatchApply.acceptCurrentDiff",
-        "title": "AI Patch: Accept Current Diff and Go to Next"
+        "title": "AI Patch: %command.acceptDiff%"
       },
       {
         "command": "aiPatchApply.copyPrompt",
-        "title": "AI Patch: Copy Prompt"
+        "title": "AI Patch: %command.copyPrompt%"
       }
     ],
     "keybindings": [

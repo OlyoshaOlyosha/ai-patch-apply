@@ -53,5 +53,12 @@
   "Click to open diff": "Haga clic para abrir el diff",
   "Open diff": "Abrir diff",
   "{0} pending edits": "{0} cambios pendientes",
-  "Some edits failed — copy the report for the AI.": "Algunos cambios fallaron: copia el informe para la IA."
+  "Some edits failed — copy the report for the AI.": "Algunos cambios fallaron: copia el informe para la IA.",
+  "Accept Current Diff": "Aceptar el diff actual",
+  "Apply from Clipboard": "Aplicar desde el portapapeles",
+  "Apply Pending": "Aplicar pendientes",
+  "Cancel Pending": "Cancelar pendientes",
+  "Copy Prompt": "Copiar el prompt",
+  "Copy Failed Report": "Copiar el informe de errores",
+  "Undo Last Patch": "Deshacer el último parche"
 }

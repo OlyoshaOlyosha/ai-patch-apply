@@ -53,5 +53,12 @@
   "Click to open diff": "Klicken, um den Diff zu öffnen",
   "Open diff": "Diff öffnen",
   "{0} pending edits": "{0} ausstehende Änderungen",
-  "Some edits failed — copy the report for the AI.": "Einige Änderungen sind fehlgeschlagen — Bericht für die KI kopieren."
+  "Some edits failed — copy the report for the AI.": "Einige Änderungen sind fehlgeschlagen — Bericht für die KI kopieren.",
+  "Accept Current Diff": "Aktuellen Diff übernehmen",
+  "Apply from Clipboard": "Aus der Zwischenablage anwenden",
+  "Apply Pending": "Ausstehende anwenden",
+  "Cancel Pending": "Ausstehende verwerfen",
+  "Copy Prompt": "Prompt kopieren",
+  "Copy Failed Report": "Fehlerbericht kopieren",
+  "Undo Last Patch": "Letzten Patch zurücknehmen"
 }

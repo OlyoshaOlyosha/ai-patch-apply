@@ -53,5 +53,12 @@
   "Click to open diff": "Нажмите, чтобы открыть diff",
   "Open diff": "Открыть diff",
   "{0} pending edits": "Правок в ожидании: {0}",
-  "Some edits failed — copy the report for the AI.": "Часть правок не применилась — скопируйте отчёт для ИИ."
+  "Some edits failed — copy the report for the AI.": "Часть правок не применилась — скопируйте отчёт для ИИ.",
+  "Accept Current Diff": "Принять текущий diff",
+  "Apply from Clipboard": "Применить из буфера обмена",
+  "Apply Pending": "Применить отложенные",
+  "Cancel Pending": "Отменить отложенные",
+  "Copy Prompt": "Скопировать промпт",
+  "Copy Failed Report": "Скопировать отчёт об ошибках",
+  "Undo Last Patch": "Отменить последний патч"
 }

@@ -7,22 +7,16 @@ const t = vscode.l10n.t;
 // file waiting in the diff tabs), quick actions below. One view on purpose —
 // the whole extension is a single flow (copy → review → apply), so a tree
 // with two sections reads better than two separate views.
+//
+// Icons go through ThemeIcon (iconPath), never $(codicon) in the label —
+// label codicons are not expanded in every context (e.g. Quick Open results
+// show them as raw text).
 
 type Node =
   | { kind: 'header'; label: string }
   | { kind: 'hint'; label: string }
   | { kind: 'pending'; change: PreparedChange }
   | { kind: 'action'; label: string; icon: string; command: string };
-
-const ACTIONS: Node[] = [
-  { kind: 'action', label: 'Apply from Clipboard', icon: '$(play)', command: 'aiPatchApply.applyFromClipboard' },
-  { kind: 'action', label: 'Accept Current Diff and Go to Next', icon: '$(debug-step-over)', command: 'aiPatchApply.acceptCurrentDiff' },
-  { kind: 'action', label: 'Apply Pending', icon: '$(check)', command: 'aiPatchApply.applyPending' },
-  { kind: 'action', label: 'Cancel Pending', icon: '$(close)', command: 'aiPatchApply.cancelPending' },
-  { kind: 'action', label: 'Copy Prompt', icon: '$(copy)', command: 'aiPatchApply.copyPrompt' },
-  { kind: 'action', label: 'Copy Failed Report', icon: '$(report)', command: 'aiPatchApply.copyFailedReport' },
-  { kind: 'action', label: 'Undo Last Patch', icon: '$(discard)', command: 'aiPatchApply.undoLastPatch' },
-];
 
 export class PatchViewProvider implements vscode.TreeDataProvider<Node> {
   private readonly emitter = new vscode.EventEmitter<Node | undefined | void>();
@@ -83,8 +77,8 @@ export class PatchViewProvider implements vscode.TreeDataProvider<Node> {
       item.contextValue = 'aiPatchPending';
       return item;
     }
-    const item = new vscode.TreeItem(`${node.icon} ${node.label}`, vscode.TreeItemCollapsibleState.None);
-    item.contextValue = 'aiPatchAction';
+    const item = new vscode.TreeItem(node.label, vscode.TreeItemCollapsibleState.None);
+    item.iconPath = new vscode.ThemeIcon(node.icon);
     item.command = { command: node.command, title: node.label };
     return item;
   }
@@ -106,7 +100,16 @@ export class PatchViewProvider implements vscode.TreeDataProvider<Node> {
     }
 
     nodes.push({ kind: 'header', label: t('Actions') });
-    nodes.push(...ACTIONS);
+    // Built per query so labels follow the current locale.
+    nodes.push(
+      { kind: 'action', label: t('Apply from Clipboard'), icon: 'play', command: 'aiPatchApply.applyFromClipboard' },
+      { kind: 'action', label: t('Accept Current Diff'), icon: 'debug-step-over', command: 'aiPatchApply.acceptCurrentDiff' },
+      { kind: 'action', label: t('Apply Pending'), icon: 'check', command: 'aiPatchApply.applyPending' },
+      { kind: 'action', label: t('Cancel Pending'), icon: 'close', command: 'aiPatchApply.cancelPending' },
+      { kind: 'action', label: t('Copy Prompt'), icon: 'copy', command: 'aiPatchApply.copyPrompt' },
+      { kind: 'action', label: t('Copy Failed Report'), icon: 'report', command: 'aiPatchApply.copyFailedReport' },
+      { kind: 'action', label: t('Undo Last Patch'), icon: 'discard', command: 'aiPatchApply.undoLastPatch' },
+    );
     return nodes;
   }
 }

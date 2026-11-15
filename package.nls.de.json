@@ -6,5 +6,13 @@
   "config.focusFirstDiff": "Nach der Vorschau zum ersten Diff-Tab statt zum letzten springen.",
   "config.failureThreshold": "Wenn der Anteil fehlgeschlagener Änderungen in einer Datei ≥ diesem Wert ist (und mindestens 2), wird die gesamte Datei abgelehnt. 0.4 = 40 %.",
   "views.container": "AI Patch Apply",
-  "views.view": "AI Patch"
+  "views.view": "AI Patch",
+  "command.apply": "Aus der Zwischenablage anwenden",
+  "command.applyPending": "Ausstehende anwenden",
+  "command.cancelPending": "Ausstehende verwerfen",
+  "command.copyFailedReport": "Fehlerbericht kopieren",
+  "command.undoLastPatch": "Letzten Patch zurücknehmen",
+  "command.clearFailedReport": "Fehlerliste leeren",
+  "command.acceptDiff": "Aktuellen Diff übernehmen und zum nächsten wechseln",
+  "command.copyPrompt": "Prompt kopieren"
 }

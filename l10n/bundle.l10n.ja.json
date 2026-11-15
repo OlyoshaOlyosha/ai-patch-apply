@@ -53,5 +53,12 @@
   "Click to open diff": "クリックして差分を開く",
   "Open diff": "差分を開く",
   "{0} pending edits": "保留中の変更: {0}",
-  "Some edits failed — copy the report for the AI.": "一部の編集が失敗しました。AI 用のレポートをコピーしてください。"
+  "Some edits failed — copy the report for the AI.": "一部の編集が失敗しました。AI 用のレポートをコピーしてください。",
+  "Accept Current Diff": "現在の差分を承認",
+  "Apply from Clipboard": "クリップボードから適用",
+  "Apply Pending": "保留中の変更を適用",
+  "Cancel Pending": "保留中の変更をキャンセル",
+  "Copy Prompt": "プロンプトをコピー",
+  "Copy Failed Report": "失敗レポートをコピー",
+  "Undo Last Patch": "最後のパッチを元に戻す"
 }

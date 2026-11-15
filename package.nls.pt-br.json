@@ -6,5 +6,13 @@
   "config.focusFirstDiff": "Após o preview, focar a primeira aba de diff em vez da última.",
   "config.failureThreshold": "Se a proporção de edições falhadas em um arquivo for >= a este valor (e houver pelo menos 2), o arquivo inteiro é rejeitado. 0.4 = 40%.",
   "views.container": "AI Patch Apply",
-  "views.view": "AI Patch"
+  "views.view": "AI Patch",
+  "command.apply": "Aplicar da área de transferência",
+  "command.applyPending": "Aplicar alterações pendentes",
+  "command.cancelPending": "Cancelar alterações pendentes",
+  "command.copyFailedReport": "Copiar o relatório de falhas",
+  "command.undoLastPatch": "Desfazer o último patch",
+  "command.clearFailedReport": "Limpar a lista de falhas",
+  "command.acceptDiff": "Aceitar o diff atual e ir para o próximo",
+  "command.copyPrompt": "Copiar o prompt"
 }

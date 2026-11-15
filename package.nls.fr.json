@@ -6,5 +6,13 @@
   "config.focusFirstDiff": "Après l'aperçu, activer le premier onglet de diff plutôt que le dernier.",
   "config.failureThreshold": "Si la part d'éditions échouées dans un fichier est >= à cette valeur (et qu'il y en a au moins 2), tout le fichier est rejeté. 0.4 = 40 %.",
   "views.container": "AI Patch Apply",
-  "views.view": "AI Patch"
+  "views.view": "AI Patch",
+  "command.apply": "Appliquer depuis le presse-papiers",
+  "command.applyPending": "Appliquer les modifications en attente",
+  "command.cancelPending": "Annuler les modifications en attente",
+  "command.copyFailedReport": "Copier le rapport d'erreurs",
+  "command.undoLastPatch": "Annuler le dernier patch",
+  "command.clearFailedReport": "Effacer la liste des erreurs",
+  "command.acceptDiff": "Accepter le diff actuel et passer au suivant",
+  "command.copyPrompt": "Copier le prompt"
 }

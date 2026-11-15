@@ -6,5 +6,13 @@
   "config.focusFirstDiff": "Tras la vista previa, enfocar la primera pestaña de diff en lugar de la última.",
   "config.failureThreshold": "Si la proporción de ediciones fallidas en un archivo es >= a este valor (y hay al menos 2), se rechaza todo el archivo. 0.4 = 40 %.",
   "views.container": "AI Patch Apply",
-  "views.view": "AI Patch"
+  "views.view": "AI Patch",
+  "command.apply": "Aplicar desde el portapapeles",
+  "command.applyPending": "Aplicar pendientes",
+  "command.cancelPending": "Cancelar pendientes",
+  "command.copyFailedReport": "Copiar el informe de errores",
+  "command.undoLastPatch": "Deshacer el último parche",
+  "command.clearFailedReport": "Borrar la lista de errores",
+  "command.acceptDiff": "Aceptar el diff actual y pasar al siguiente",
+  "command.copyPrompt": "Copiar el prompt"
 }

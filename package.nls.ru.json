@@ -6,5 +6,13 @@
   "config.focusFirstDiff": "После preview переходить на первую diff-вкладку вместо последней.",
   "config.failureThreshold": "Если доля неудавшихся правок в файле ≥ этого значения (и их не меньше 2), весь файл отклоняется целиком. 0.4 = 40%.",
   "views.container": "AI Patch Apply",
-  "views.view": "AI Patch"
+  "views.view": "AI Patch",
+  "command.apply": "Применить из буфера обмена",
+  "command.applyPending": "Применить отложенные",
+  "command.cancelPending": "Отменить отложенные",
+  "command.copyFailedReport": "Скопировать отчёт об ошибках",
+  "command.undoLastPatch": "Отменить последний патч",
+  "command.clearFailedReport": "Очистить список ошибок",
+  "command.acceptDiff": "Принять текущий diff и перейти к следующему",
+  "command.copyPrompt": "Скопировать промпт"
 }
