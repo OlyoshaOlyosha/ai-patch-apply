@@ -1,0 +1,14 @@
+// Launch the Extension Development Host with the compiled extension loaded.
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run AI Patch Apply",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": ["--extensionDevelopmentPath=${workspaceFolder}"],
+      "outFiles": ["${workspaceFolder}/out/**/*.js"],
+      "preLaunchTask": "npm: compile"
+    }
+  ]
+}
