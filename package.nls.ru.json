@@ -1,0 +1,8 @@
+{
+  "config.title": "AI Patch Apply",
+  "config.afterMaxBytes": "Максимальный размер блока AFTER (в символах). Большие блоки отбрасываются при парсинге.",
+  "config.fuzzyMatch": "Нечёткое сопоставление BEFORE: игнорировать табы vs пробелы и trailing whitespace.",
+  "config.pinDiffTabs": "Фиксировать diff-вкладки, чтобы они не вытесняли друг друга (preview-режим VS Code).",
+  "config.focusFirstDiff": "После preview переходить на первую diff-вкладку вместо последней.",
+  "config.failureThreshold": "Если доля неудавшихся правок в файле ≥ этого значения (и их не меньше 2), весь файл отклоняется целиком. 0.4 = 40%."
+}

@@ -1,0 +1,17 @@
+node_modules/
+out/
+*.vsix
+
+# Editor / agent tools
+.opencode/
+.serena/
+.agents/
+
+# Local-only scratch space (personal prompts, debug scripts)
+local/
+
+# AI project docs
+AGENTS.md
+CLAUDE.md
+tech_instructions.md
+user_commands.md

@@ -1,0 +1,8 @@
+{
+  "config.title": "AI Patch Apply",
+  "config.afterMaxBytes": "Größter akzeptierter AFTER-Block in Zeichen. Größere Blöcke werden beim Parsen abgelehnt.",
+  "config.fuzzyMatch": "Unscharfe Zuordnung von BEFORE: Tabs vs. Leerzeichen und nachgestellte Leerzeichen ignorieren.",
+  "config.pinDiffTabs": "Diff-Tabs anheften, damit sie sich nicht gegenseitig verdrängen (VS Code-Vorschaumodus).",
+  "config.focusFirstDiff": "Nach der Vorschau zum ersten Diff-Tab statt zum letzten springen.",
+  "config.failureThreshold": "Wenn der Anteil fehlgeschlagener Änderungen in einer Datei ≥ diesem Wert ist (und mindestens 2), wird die gesamte Datei abgelehnt. 0.4 = 40 %."
+}

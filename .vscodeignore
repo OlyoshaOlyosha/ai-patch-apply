@@ -1,0 +1,20 @@
+.vscode/**
+src/**
+tests/**
+node_modules/**
+tsconfig.json
+vitest.config.ts
+**/*.map
+.gitignore
+package-lock.json
+
+# Local-only agent docs, scratch space and tool state
+AGENTS.md
+CLAUDE.md
+tech_instructions.md
+user_commands.md
+.opencode/**
+.agents/**
+.serena/**
+local/**
+*.vsix

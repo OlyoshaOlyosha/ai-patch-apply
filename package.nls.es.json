@@ -1,0 +1,8 @@
+{
+  "config.title": "AI Patch Apply",
+  "config.afterMaxBytes": "Tamaño máximo aceptado del bloque AFTER, en caracteres. Los bloques mayores se rechazan al analizar.",
+  "config.fuzzyMatch": "Coincidencia difusa de BEFORE: ignorar tabulaciones vs. espacios y espacios al final de línea.",
+  "config.pinDiffTabs": "Fijar las pestañas de diff para que no se reemplacen entre sí (modo de vista previa de VS Code).",
+  "config.focusFirstDiff": "Tras la vista previa, enfocar la primera pestaña de diff en lugar de la última.",
+  "config.failureThreshold": "Si la proporción de ediciones fallidas en un archivo es >= a este valor (y hay al menos 2), se rechaza todo el archivo. 0.4 = 40 %."
+}

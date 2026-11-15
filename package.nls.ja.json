@@ -1,0 +1,8 @@
+{
+  "config.title": "AI Patch Apply",
+  "config.afterMaxBytes": "受け入れる AFTER ブロックの最大サイズ（文字数）。それを超えるブロックは解析時に拒否されます。",
+  "config.fuzzyMatch": "BEFORE のファジーマッチング：タブとスペースの違いおよび行末 whitespace を無視します。",
+  "config.pinDiffTabs": "diff タブをピン留めして相互に追い出されないようにします（VS Code プレビューモード）。",
+  "config.focusFirstDiff": "プレビュー後に最後ではなく最初の diff タブにフォーカスします。",
+  "config.failureThreshold": "ファイル内の失敗した編集の割合がこの値以上（かつ 2 件以上）の場合、ファイル全体を拒否します。0.4 = 40%。"
+}

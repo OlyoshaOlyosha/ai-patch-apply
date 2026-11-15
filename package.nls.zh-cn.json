@@ -1,0 +1,8 @@
+{
+  "config.title": "AI Patch Apply",
+  "config.afterMaxBytes": "可接受的 AFTER 代码块最大长度（字符数）。超出的块在解析时被拒绝。",
+  "config.fuzzyMatch": "BEFORE 模糊匹配：忽略制表符与空格的差异以及行尾空白。",
+  "config.pinDiffTabs": "固定 diff 标签页，避免互相挤掉（VS Code 预览模式）。",
+  "config.focusFirstDiff": "预览后聚焦第一个 diff 标签页，而不是最后一个。",
+  "config.failureThreshold": "如果某个文件中失败编辑的比例达到此值（且至少有 2 处失败），整个文件将被拒绝。0.4 = 40%。"
+}

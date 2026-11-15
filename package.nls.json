@@ -1,0 +1,8 @@
+{
+  "config.title": "AI Patch Apply",
+  "config.afterMaxBytes": "Largest accepted AFTER block, in characters. Bigger blocks are rejected at parse time.",
+  "config.fuzzyMatch": "Ignore tabs vs spaces and trailing whitespace when matching BEFORE.",
+  "config.pinDiffTabs": "Pin diff tabs so they do not replace each other (VS Code preview mode).",
+  "config.focusFirstDiff": "Focus the first diff tab instead of the last after preview.",
+  "config.failureThreshold": "If the share of failed edits in a file is >= this value (and there are at least 2), the whole file is rejected. 0.4 = 40%."
+}

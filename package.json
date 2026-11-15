@@ -1,0 +1,137 @@
+{
+  "name": "ai-patch-apply",
+  "displayName": "AI Patch Apply",
+  "description": "Apply AI code changes from your chat — paste a reply with BEFORE/AFTER blocks, review each edit in a native diff, accept or reject. Works with ChatGPT, Claude, Gemini and any other chat.",
+  "version": "1.0.0",
+  "keywords": [
+    "ai",
+    "patch",
+    "diff",
+    "apply",
+    "clipboard",
+    "chatgpt",
+    "claude",
+    "before after",
+    "code review"
+  ],
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "AI",
+    "Other"
+  ],
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "aiPatchApply.applyFromClipboard",
+        "title": "AI Patch: Apply from Clipboard"
+      },
+      {
+        "command": "aiPatchApply.applyPending",
+        "title": "AI Patch: Apply Pending"
+      },
+      {
+        "command": "aiPatchApply.cancelPending",
+        "title": "AI Patch: Cancel Pending"
+      },
+      {
+        "command": "aiPatchApply.copyFailedReport",
+        "title": "AI Patch: Copy Failed Report"
+      },
+      {
+        "command": "aiPatchApply.undoLastPatch",
+        "title": "AI Patch: Undo Last Patch"
+      },
+      {
+        "command": "aiPatchApply.clearFailedReport",
+        "title": "AI Patch: Clear Failed Report"
+      },
+      {
+        "command": "aiPatchApply.acceptCurrentDiff",
+        "title": "AI Patch: Accept Current Diff and Go to Next"
+      },
+      {
+        "command": "aiPatchApply.copyPrompt",
+        "title": "AI Patch: Copy Prompt"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "aiPatchApply.applyFromClipboard",
+        "key": "ctrl+alt+v",
+        "mac": "cmd+alt+v"
+      },
+      {
+        "command": "aiPatchApply.undoLastPatch",
+        "key": "ctrl+alt+z",
+        "mac": "cmd+alt+z"
+      },
+      {
+        "command": "aiPatchApply.acceptCurrentDiff",
+        "key": "ctrl+alt+w",
+        "mac": "cmd+alt+w"
+      }
+    ],
+    "configuration": {
+      "title": "%config.title%",
+      "properties": {
+        "aiPatch.afterMaxBytes": {
+          "type": "number",
+          "default": 20000,
+          "description": "%config.afterMaxBytes%"
+        },
+        "aiPatch.fuzzyMatch": {
+          "type": "boolean",
+          "default": true,
+          "description": "%config.fuzzyMatch%"
+        },
+        "aiPatch.pinDiffTabs": {
+          "type": "boolean",
+          "default": true,
+          "description": "%config.pinDiffTabs%"
+        },
+        "aiPatch.focusFirstDiff": {
+          "type": "boolean",
+          "default": true,
+          "description": "%config.focusFirstDiff%"
+        },
+        "aiPatch.failureThreshold": {
+          "type": "number",
+          "default": 0.4,
+          "minimum": 0,
+          "maximum": 1,
+          "description": "%config.failureThreshold%"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.4.0",
+    "vitest": "^2.1.0"
+  },
+  "license": "MIT",
+  "icon": "icon.png",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OlyoshaOlyosha/ai-patch-apply.git"
+  },
+  "bugs": {
+    "url": "https://github.com/OlyoshaOlyosha/ai-patch-apply/issues"
+  },
+  "homepage": "https://github.com/OlyoshaOlyosha/ai-patch-apply#readme",
+  "l10n": "./l10n"
+}
