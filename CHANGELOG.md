@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Editable review: the right side of every diff tab is now editable — touch up the AI's code right in the diff before accepting. `Ctrl+Alt+W` and Apply Pending apply your edited text, and the edit survives a window reload with the rest of the review.
+
 ## 1.1.0 (2026-11-15)
 
 - Undo/redo: `Ctrl+Alt+Z` steps back per patch (up to 10 steps), the new `Ctrl+Alt+Y` steps forward after an accidental undo.
