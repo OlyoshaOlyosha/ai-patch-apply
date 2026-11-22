@@ -3,6 +3,7 @@
 // "review in progress"; extension.ts keeps only the UI wiring.
 import * as vscode from 'vscode';
 import { PreparedChange, LABEL_PREFIXES, previewPrepared } from './applier';
+import { MEMFS_SCHEME, clearEditable, makeEditableUri } from './preview-fs';
 
 const t = vscode.l10n.t;
 
@@ -84,10 +85,18 @@ export async function closeOldPreviews(): Promise<void> {
       if (isPatchDiffTab(tab)) toClose.push(tab);
     }
   }
+  // Preview docs are auto-saved as the user types, but a stale doc (closed
+  // before its last edit was captured) can linger dirty in textDocuments
+  // and would make tabGroups.close raise the native "unsaved changes"
+  // prompt. Save them — the provider map already holds the latest text.
+  for (const doc of vscode.workspace.textDocuments) {
+    if (doc.uri.scheme === MEMFS_SCHEME && doc.isDirty) void doc.save();
+  }
   if (toClose.length > 0) {
     await vscode.window.tabGroups.close(toClose, false);
   }
   patchContents.clear();
+  clearEditable();
 }
 
 export function getDirtyTargets(prepared: PreparedChange[]): string[] {
@@ -235,7 +244,11 @@ export async function restorePendingReview(
   setTabSyncSuppressed(true);
   try {
     await closeOldPreviews();
-    await previewPrepared(pending, makePreviewUri, options);
+    await previewPrepared(
+      pending,
+      { preview: makePreviewUri, editable: makeEditableUri },
+      options,
+    );
   } finally {
     setTabSyncSuppressed(false);
   }
@@ -293,4 +306,44 @@ export async function notifySameClipboardPending(): Promise<void> {
   vscode.window.showInformationMessage(
     t('AI Patch: {0} pending — diff tabs are open.', pending.length),
   );
+}
+
+// --- editable preview --------------------------------------------------------
+
+// Every edit the user makes on the diff's right side (ai-patch-mem:) flows
+// into PreparedChange.newContent immediately, so Ctrl+Alt+W, Apply Pending
+// and the undo snapshots all pick up the touched-up code. The document is
+// saved straight into the memfs provider as the user types — a doc left
+// dirty would make every programmatic close (accept, apply, cancel) raise
+// the native "unsaved changes" prompt.
+// setTimeout/clearTimeout via globalThis — @types/node is deliberately not
+// pulled into the compile unit (see applier.ts delay()).
+const sched = globalThis as unknown as {
+  setTimeout: (cb: () => void, ms: number) => unknown;
+  clearTimeout: (handle: unknown) => void;
+};
+let persistTimer: unknown;
+
+function schedulePersist(): void {
+  if (!reviewContext) return;
+  if (persistTimer !== undefined) sched.clearTimeout(persistTimer);
+  persistTimer = sched.setTimeout(() => {
+    persistTimer = undefined;
+    if (reviewContext) void persistReview(reviewContext);
+  }, 750);
+}
+
+export function wireEditableEdits(): vscode.Disposable {
+  return vscode.workspace.onDidChangeTextDocument((e) => {
+    if (e.document.uri.scheme !== MEMFS_SCHEME) return;
+    if (e.contentChanges.length === 0) return;
+    const p = pending?.find(
+      (c) => c.editableUri?.toString() === e.document.uri.toString(),
+    );
+    if (!p) return;
+    p.newContent = e.document.getText();
+    // Thenable has no .catch — wrap for a silent degrade if saving fails.
+    void Promise.resolve(e.document.save()).catch(() => {});
+    schedulePersist();
+  });
 }

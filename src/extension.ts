@@ -32,7 +32,9 @@ import {
   removePendingFile,
   notifySameClipboardPending,
   restorePendingReview,
+  wireEditableEdits,
 } from './review';
+import { MEMFS_SCHEME, PatchFileSystemProvider, makeEditableUri } from './preview-fs';
 import {
   pushSnapshot,
   getAppliedHash,
@@ -245,6 +247,16 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   );
   context.subscriptions.push(restoreCmd);
 
+  // Writable virtual fs for the diff's right side — makes the preview
+  // editable; wireEditableEdits routes user edits into PreparedChange.
+  context.subscriptions.push(
+    vscode.workspace.registerFileSystemProvider(
+      MEMFS_SCHEME,
+      new PatchFileSystemProvider(),
+    ),
+    wireEditableEdits(),
+  );
+
   context.subscriptions.push(
     vscode.window.tabGroups.onDidChangeTabs(() => {
       if (isTabSyncSuppressed()) return;
@@ -394,10 +406,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         setTabSyncSuppressed(true);
         try {
           await closeOldPreviews();
-          await previewPrepared(result.prepared, makePreviewUri, {
-            pinTabs: cfg.get<boolean>('pinDiffTabs', true),
-            focusFirst: cfg.get<boolean>('focusFirstDiff', true),
-          });
+          await previewPrepared(
+            result.prepared,
+            { preview: makePreviewUri, editable: makeEditableUri },
+            {
+              pinTabs: cfg.get<boolean>('pinDiffTabs', true),
+              focusFirst: cfg.get<boolean>('focusFirstDiff', true),
+            },
+          );
           setPending(result.prepared, result.prepared.length, hash);
         } finally {
           setTabSyncSuppressed(false);

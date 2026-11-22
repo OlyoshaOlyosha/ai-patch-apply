@@ -41,6 +41,16 @@ async function main() {
     }
   };
 
+  // The writable preview doc backing the active diff tab's right side.
+  const activeDiffModifiedDoc = () => {
+    const tab = vscode.window.tabGroups.activeTabGroup?.activeTab;
+    if (!(tab?.input instanceof vscode.TabInputTextDiff)) return undefined;
+    const modified = tab.input.modified;
+    return vscode.workspace.textDocuments.find(
+      (d) => d.uri.toString() === modified.toString(),
+    );
+  };
+
   let ext = vscode.extensions.getExtension('undefined_publisher.ai-patch-apply');
   if (!ext) ext = vscode.extensions.all.find((e) => /ai-patch-apply/.test(e.id));
   ok('extension found', !!ext);
@@ -93,10 +103,33 @@ async function main() {
   }
   ok('restore re-opened the diff tabs', diffTabs >= 1);
 
+  // Editable preview: the diff's right side is a writable virtual document
+  // (ai-patch-mem:) — the user can touch up the AI's code before accepting.
+  // Locate the doc through the ACTIVE diff tab's modified side — stale docs
+  // from earlier previews can linger in textDocuments.
+  const memfsDoc = activeDiffModifiedDoc();
+  ok('editable preview document exists', !!memfsDoc);
+  if (memfsDoc) {
+    ok('preview language resolves (inference or fallback)', memfsDoc.languageId === 'javascript');
+    const edit = new vscode.WorkspaceEdit();
+    edit.insert(memfsDoc.uri, new vscode.Position(2, 0), '  // touched up\n');
+    ok('preview right side is editable', await vscode.workspace.applyEdit(edit));
+    await new Promise((r) => setTimeout(r, 300));
+    console.log('[PROBE] uri=' + memfsDoc.uri.toString());
+    console.log('[PROBE] textHasEdit=' + memfsDoc.getText().includes('touched up') + ' dirty=' + memfsDoc.isDirty);
+    const saveRes = await memfsDoc.save();
+    console.log('[PROBE] save() res=' + saveRes + ' dirtyAfter=' + memfsDoc.isDirty);
+    ok('preview edit auto-saved (never dirty)', !memfsDoc.isDirty);
+  }
+
   await vscode.commands.executeCommand('aiPatchApply.applyPending');
   ok(
     'apply flow modified the file on disk',
     await waitForFile(file, (t) => t.includes('Hi, ${name}!')),
+  );
+  ok(
+    'apply applied the edited preview content',
+    fs.readFileSync(file, 'utf8').includes('touched up'),
   );
 
   // Undo restores the original byte-for-byte
@@ -117,6 +150,31 @@ async function main() {
     'second undo restored the original',
     await waitForFile(file, (t) => t === ORIGINAL),
   );
+
+  // Accept path (Ctrl+Alt+W) with an edited preview: the touched-up right
+  // side is what gets applied, not the originally generated content.
+  await vscode.env.clipboard.writeText(SAMPLE);
+  await vscode.commands.executeCommand('aiPatchApply.applyFromClipboard');
+  const memDoc = activeDiffModifiedDoc();
+  ok('accept: editable preview opened', !!memDoc);
+  if (memDoc) {
+    const edit = new vscode.WorkspaceEdit();
+    edit.insert(memDoc.uri, new vscode.Position(2, 0), '  // touched up\n');
+    await vscode.workspace.applyEdit(edit);
+    await new Promise((r) => setTimeout(r, 300));
+    ok('accept: preview edit auto-saved', !memDoc.isDirty);
+    await vscode.commands.executeCommand('aiPatchApply.acceptCurrentDiff');
+    ok(
+      'accept applied the edited preview content',
+      await waitForFile(file, (t) => t.includes('Hi, ${name}!') && t.includes('touched up')),
+    );
+  }
+  // Reset to the original so the BAD sample below fails as intended. Undo
+  // (not fs.writeFileSync) — the real-file document is open in VS Code from
+  // the accept path's diff; a direct disk write would leave its cached model
+  // stale and trip the stale-check of the next run.
+  await vscode.commands.executeCommand('aiPatchApply.undoLastPatch');
+  await waitForFile(file, (t) => t === ORIGINAL);
 
   // Failure path: BEFORE that does not exist -> report, not a silent no-op
   const BAD = SAMPLE.replace("console.log('Hello, ' + name);", "console.log('GOODBYE ' + name);");
@@ -154,7 +212,9 @@ async function main() {
     const m = md.match(/(\d+) entries/);
     return m ? parseInt(m[1], 10) : -1;
   };
-  const nAll = countEntries(hist);
+  // Baseline counts the journal as it is NOW — the accept-path block above
+  // added apply entries after `hist` was captured.
+  const nAll = countEntries(await showHistoryText());
   ok('journal entry count parsed', nAll >= 3);
 
   await cfg.update('patchHistory', 'failuresOnly', vscode.ConfigurationTarget.Global);

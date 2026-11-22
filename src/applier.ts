@@ -51,6 +51,10 @@ export interface PreparedChange {
   isDelete: boolean;
   originalContent: string;
   newContent: string;
+  /** Set when the diff opens: the writable preview URI backing the diff's
+   * right side (ai-patch-mem:). User edits there flow back into newContent
+   * via review.ts; never persisted — restore recreates it. */
+  editableUri?: vscode.Uri;
 }
 
 export interface AtomicRejection {
@@ -458,9 +462,16 @@ export interface PreviewOptions {
   focusFirst?: boolean;
 }
 
+export interface PreviewUriFactories {
+  /** Read-only preview content (left side, empty-original for new files). */
+  preview: (file: string, content: string) => vscode.Uri;
+  /** Writable preview content — the diff's editable right side. */
+  editable: (file: string, content: string) => vscode.Uri;
+}
+
 export async function previewPrepared(
   prepared: PreparedChange[],
-  makePreviewUri: (file: string, content: string) => vscode.Uri,
+  factories: PreviewUriFactories,
   options: PreviewOptions = {},
 ): Promise<void> {
   const pinTabs = options.pinTabs ?? true;
@@ -473,7 +484,8 @@ export async function previewPrepared(
   }> = [];
 
   for (const p of prepared) {
-    const previewUri = makePreviewUri(p.file, p.newContent);
+    const previewUri = factories.editable(p.file, p.newContent);
+    p.editableUri = previewUri;
     let originalUri: vscode.Uri;
     let baseLabel: string;
     let stat: string;
@@ -483,13 +495,27 @@ export async function previewPrepared(
       baseLabel = `${LABEL_DELETE}: ${p.file}`;
       stat = diffStat(p.originalContent, '');
     } else if (p.isNew) {
-      originalUri = makePreviewUri(`${p.file}__empty`, '');
+      originalUri = factories.preview(`${p.file}__empty`, '');
       baseLabel = `${LABEL_NEW}: ${p.file}`;
       stat = diffStat('', p.newContent);
     } else {
       originalUri = p.uri;
       baseLabel = `${LABEL_MODIFIED}: ${p.file}`;
       stat = diffStat(p.originalContent, p.newContent);
+    }
+
+    // Language from path inference normally; explicit set as fallback for
+    // shells where a custom-scheme path does not trigger inference.
+    if (!p.isDelete) {
+      try {
+        const doc = await vscode.workspace.openTextDocument(previewUri);
+        if (doc.languageId === 'plaintext') {
+          const lang = langFromUri(p.uri);
+          if (lang) await vscode.languages.setTextDocumentLanguage(doc, lang);
+        }
+      } catch {
+        // Plain text is an acceptable degrade.
+      }
     }
 
     const label = stat ? `${baseLabel} (${stat})` : baseLabel;
